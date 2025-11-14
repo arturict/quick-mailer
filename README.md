@@ -11,6 +11,7 @@ Local-only web app for sending emails via Resend with full history tracking. Per
 
 - 📤 **Email Composer** - Send emails with custom From/To/Subject/Body
 - 📋 **From Address Selector** - Choose from configured sender addresses
+- 📝 **Email Templates** - Create and manage reusable templates with variable substitution
 - 📜 **Email History** - Track all sent emails with full details and pagination
 - 🎨 **HTML & Plain Text** - Support for both HTML and plain text emails
 - 💾 **SQLite Database** - Lightweight local storage with WAL mode
@@ -143,17 +144,73 @@ DATABASE_PATH=./data/emails.db
 3. Configure SMTP settings in `.env`
 4. See [SMTP Guide](docs/SMTP.md) for provider-specific configs
 
+## 📝 Using Email Templates
+
+Email templates allow you to create reusable email content with variable substitution.
+
+### Creating a Template
+
+1. Navigate to the **Templates** tab in the web UI
+2. Click **New Template**
+3. Fill in the template details:
+   - **Name**: A descriptive name for the template
+   - **Subject**: Email subject with variables like `{{name}}`
+   - **Message**: Email body with variables like `{{link}}`, `{{date}}`, etc.
+4. The editor automatically detects variables and shows them in the preview
+5. Fill in sample values to preview how the email will look
+6. Click **Create Template** to save
+
+### Using a Template
+
+1. Go to the **Compose** tab
+2. Select a template from the **Use Template** dropdown
+3. Fill in the required variables
+4. The email will be sent with variables substituted
+
+### Variable Syntax
+
+Use mustache-style syntax for variables: `{{variableName}}`
+
+**Example:**
+```
+Subject: Welcome {{name}}!
+Body: Hello {{name}}, click here to verify: {{verificationLink}}
+```
+
+When sending, provide values:
+```json
+{
+  "name": "John Doe",
+  "verificationLink": "https://example.com/verify/abc123"
+}
+```
+
 ## 📋 API Endpoints
 
+### Emails
 ```
-POST   /api/emails      - Send email
+POST   /api/emails      - Send email (supports template-based sending)
 GET    /api/emails      - Get email history (paginated)
 GET    /api/emails/:id  - Get single email details
+```
+
+### Templates
+```
+POST   /api/templates     - Create a new template
+GET    /api/templates     - Get all templates
+GET    /api/templates/:id - Get single template
+PUT    /api/templates/:id - Update template
+DELETE /api/templates/:id - Delete template
+```
+
+### Health
+```
 GET    /health          - Health check
 ```
 
 ## 🗄️ Database Schema
 
+### Emails Table
 ```sql
 CREATE TABLE emails (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -166,6 +223,20 @@ CREATE TABLE emails (
   email_id TEXT,
   error_message TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Templates Table
+```sql
+CREATE TABLE templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  subject TEXT NOT NULL,
+  body_text TEXT,
+  body_html TEXT,
+  variables TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -236,7 +307,7 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## 🎯 Roadmap
 
 - [x] **SMTP Support** - Generic SMTP server support
-- [ ] Email templates with variables
+- [x] **Email Templates** - Templates with variable substitution
 - [ ] Bulk email sending
 - [ ] Email scheduling
 - [ ] Attachment support

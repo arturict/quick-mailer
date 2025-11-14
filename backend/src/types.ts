@@ -17,6 +17,8 @@ export interface SendEmailRequest {
   subject: string;
   text?: string;
   html?: string;
+  templateId?: number;
+  variables?: Record<string, string>;
 }
 
 export interface EmailSearchParams {
@@ -42,4 +44,36 @@ export interface Config {
   defaultSenderName: string;
   port: number;
   databasePath: string;
+}
+
+export interface Template {
+  id?: number;
+  name: string;
+  subject: string;
+  body_text?: string;
+  body_html?: string;
+  variables?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateTemplateRequest {
+  name: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  variables?: string[];
+}
+
+export interface UpdateTemplateRequest {
+  name?: string;
+  subject?: string;
+  text?: string;
+  html?: string;
+  variables?: string[];
+}
+
+export interface TemplateListResponse {
+  templates: Template[];
+  total: number;
 }
