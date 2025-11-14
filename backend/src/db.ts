@@ -1,9 +1,5 @@
 import { Database } from 'bun:sqlite';
-<<<<<<< HEAD
 import type { Email, EmailSearchParams, Template } from './types';
-=======
-import { Email, Template } from './types';
->>>>>>> origin/master
 
 const dbPath = process.env.DATABASE_PATH || './data/emails.db';
 export const db = new Database(dbPath);
