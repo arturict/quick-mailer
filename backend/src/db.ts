@@ -43,6 +43,22 @@ db.run(`
 
 db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
 
+// Templates table
+db.run(`
+  CREATE TABLE IF NOT EXISTS templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    subject TEXT NOT NULL,
+    body_text TEXT,
+    body_html TEXT,
+    variables TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
+
 export const insertEmail = db.prepare(`
   INSERT INTO emails (from_address, to_address, subject, body_text, body_html, status, email_id, error_message)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?)

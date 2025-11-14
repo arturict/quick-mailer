@@ -1,22 +1,25 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Edit2, Trash2, FileText } from 'lucide-react';
 import { templateApi, Template } from '../api';
 import { TemplateEditor } from './TemplateEditor';
+import { TableSkeleton } from './ui/LoadingSkeleton';
+import { EmptyState } from './ui/EmptyState';
+import { showToast } from './ui/Toast';
 
 export function TemplateManager() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
   const loadTemplates = async () => {
     try {
       setIsLoading(true);
-      setError(null);
       const result = await templateApi.getTemplates();
       setTemplates(result.templates);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load templates');
+      showToast.error(err instanceof Error ? err.message : 'Failed to load templates');
     } finally {
       setIsLoading(false);
     }
@@ -26,16 +29,17 @@ export function TemplateManager() {
     loadTemplates();
   }, []);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this template?')) {
+  const handleDelete = async (id: number, name: string) => {
+    if (!confirm(`Are you sure you want to delete the template "${name}"?`)) {
       return;
     }
 
     try {
       await templateApi.deleteTemplate(id);
+      showToast.success(`Template "${name}" deleted successfully`);
       await loadTemplates();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete template');
+      showToast.error(err instanceof Error ? err.message : 'Failed to delete template');
     }
   };
 
@@ -60,84 +64,120 @@ export function TemplateManager() {
   }
 
   return (
-    <div className="card bg-base-100 shadow-xl">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="card bg-base-100 shadow-xl"
+    >
       <div className="card-body">
-        <div className="flex justify-between items-center">
-          <h2 className="card-title">📋 Email Templates</h2>
-          <button onClick={handleCreate} className="btn btn-primary btn-sm">
-            ➕ New Template
-          </button>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="card-title flex items-center gap-2">
+            <FileText className="w-6 h-6" />
+            Email Templates
+          </h2>
+          <motion.button 
+            onClick={handleCreate} 
+            className="btn btn-primary btn-sm gap-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label="Create new template"
+          >
+            <Plus className="w-4 h-4" />
+            New Template
+          </motion.button>
         </div>
 
-        {error && (
-          <div className="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
         {isLoading ? (
-          <div className="flex justify-center p-8">
-            <span className="loading loading-spinner loading-lg"></span>
-          </div>
+          <TableSkeleton rows={3} />
         ) : templates.length === 0 ? (
-          <div className="text-center p-8 text-base-content/60">
-            No templates yet. Create your first template to get started!
-          </div>
+          <EmptyState
+            icon="template"
+            title="No templates yet"
+            description="Create your first email template to save time composing similar emails."
+            action={{
+              label: "Create Template",
+              onClick: handleCreate
+            }}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="table">
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Subject</th>
-                  <th>Variables</th>
-                  <th>Created</th>
-                  <th>Actions</th>
+                  <th className="hidden md:table-cell">Subject</th>
+                  <th className="hidden lg:table-cell">Variables</th>
+                  <th className="hidden sm:table-cell">Created</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {templates.map((template) => (
-                  <tr key={template.id}>
-                    <td className="font-medium">{template.name}</td>
-                    <td className="text-sm opacity-70">{template.subject}</td>
-                    <td>
-                      <div className="flex gap-1 flex-wrap">
-                        {template.variables?.map((v) => (
-                          <span key={v} className="badge badge-sm badge-outline">
-                            {v}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="text-sm opacity-70">
-                      {template.created_at && new Date(template.created_at).toLocaleDateString()}
-                    </td>
-                    <td>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(template)}
-                          className="btn btn-ghost btn-xs"
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(template.id!)}
-                          className="btn btn-ghost btn-xs text-error"
-                        >
-                          🗑️ Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                <AnimatePresence mode="popLayout">
+                  {templates.map((template, index) => (
+                    <motion.tr 
+                      key={template.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="hover:bg-base-200 transition-colors"
+                    >
+                      <td className="font-medium">{template.name}</td>
+                      <td className="hidden md:table-cell text-sm opacity-70 max-w-xs truncate" title={template.subject}>
+                        {template.subject}
+                      </td>
+                      <td className="hidden lg:table-cell">
+                        <div className="flex gap-1 flex-wrap">
+                          {template.variables && template.variables.length > 0 ? (
+                            template.variables.map((v) => (
+                              <span key={v} className="badge badge-sm badge-outline">
+                                {v}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs opacity-50">No variables</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="hidden sm:table-cell text-sm opacity-70">
+                        {template.created_at && new Intl.DateTimeFormat('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        }).format(new Date(template.created_at))}
+                      </td>
+                      <td>
+                        <div className="flex gap-1 sm:gap-2 justify-end">
+                          <motion.button
+                            onClick={() => handleEdit(template)}
+                            className="btn btn-ghost btn-xs gap-1"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            aria-label={`Edit template ${template.name}`}
+                          >
+                            <Edit2 className="w-3 h-3" />
+                            <span className="hidden sm:inline">Edit</span>
+                          </motion.button>
+                          <motion.button
+                            onClick={() => handleDelete(template.id!, template.name)}
+                            className="btn btn-ghost btn-xs text-error gap-1"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            aria-label={`Delete template ${template.name}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span className="hidden sm:inline">Delete</span>
+                          </motion.button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
               </tbody>
             </table>
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
