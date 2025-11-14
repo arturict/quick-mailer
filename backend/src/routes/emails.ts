@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { saveEmail, getEmails, getTotalEmailsCount, getEmailById, saveAttachment, getAttachmentsByEmailId } from '../db';
-import { SendEmailRequest, EmailListResponse } from '../types';
+import type { SendEmailRequest, EmailListResponse } from '../types';
 import { EmailServiceFactory } from '../services/email';
 
 const emails = new Hono();
