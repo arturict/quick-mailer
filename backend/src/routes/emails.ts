@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
-import { saveEmail, getEmails, getTotalEmailsCount, getEmailById } from '../db';
+import { saveEmail, getEmails, getTotalEmailsCount, getEmailById, getTemplateById } from '../db';
 import { SendEmailRequest, EmailListResponse } from '../types';
 import { EmailServiceFactory } from '../services/email';
+import { substituteVariables } from '../utils/template';
 
 const emails = new Hono();
 const emailService = EmailServiceFactory.create();
@@ -19,7 +20,26 @@ emails.post('/', async (c) => {
   try {
     const body = await c.req.json<SendEmailRequest>();
 
-    if (!body.from || !body.to || !body.subject) {
+    let subject = body.subject;
+    let text = body.text;
+    let html = body.html;
+
+    // If templateId is provided, load template and substitute variables
+    if (body.templateId) {
+      const template = getTemplateById(body.templateId);
+      
+      if (!template) {
+        return c.json({ error: 'Template not found' }, 404);
+      }
+
+      const vars = body.variables || {};
+      
+      subject = substituteVariables(template.subject, vars);
+      text = template.body_text ? substituteVariables(template.body_text, vars) : undefined;
+      html = template.body_html ? substituteVariables(template.body_html, vars) : undefined;
+    }
+
+    if (!body.from || !body.to || !subject) {
       return c.json({ error: 'Missing required fields: from, to, subject' }, 400);
     }
 
@@ -36,17 +56,17 @@ emails.post('/', async (c) => {
     const result = await emailService.send({
       from: body.from,
       to: body.to,
-      subject: body.subject,
-      text: body.text,
-      html: body.html,
+      subject,
+      text,
+      html,
     });
 
     const emailId = saveEmail({
       from_address: body.from,
       to_address: body.to,
-      subject: body.subject,
-      body_text: body.text,
-      body_html: body.html,
+      subject,
+      body_text: text,
+      body_html: html,
       status: result.success ? 'sent' : 'failed',
       email_id: result.messageId,
       error_message: result.error,
