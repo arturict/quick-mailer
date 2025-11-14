@@ -18,6 +18,8 @@ Local-only web app for sending emails via Resend with full history tracking. Per
 - 📧 **Multiple Email Providers** - Support for Resend API and any SMTP server
 - 🐳 **Docker Deployment** - Production-ready containerization
 - ⚡ **Fast & Modern** - Built with Bun, Hono, React 19, Vite, and Tailwind CSS
+- ⌨️ **Keyboard Shortcuts** - Efficient navigation with keyboard shortcuts
+- 🎨 **Modern Design System** - Toast notifications, loading states, animations, and accessibility features
 
 ### Supported Email Providers
 
@@ -185,6 +187,20 @@ When sending, provide values:
 }
 ```
 
+## ⌨️ Keyboard Shortcuts
+
+Quick Mailer supports keyboard shortcuts for efficient navigation:
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+C` | Go to Compose tab |
+| `Ctrl+T` | Go to Templates tab |
+| `Ctrl+H` | Go to History tab |
+| `Ctrl+Enter` | Send email (in compose view) |
+| `Shift+?` | Show/Hide keyboard shortcuts modal |
+
+> **Note:** On macOS, use `⌘` (Cmd) instead of `Ctrl`
+
 ## 📋 API Endpoints
 
 ### Emails
@@ -282,6 +298,19 @@ docker-compose down -v
 - No authentication is implemented
 - Recommended to run behind a VPN or firewall
 - CORS is enabled for development (configure for production)
+
+## 🎨 Design System
+
+Quick Mailer includes a comprehensive modern design system with:
+
+- **Toast Notifications** - Success, error, info, and warning notifications with ARIA support
+- **Empty States** - User-friendly messages when there's no content
+- **Loading Skeletons** - Improved perceived performance
+- **Error Boundary** - Graceful error handling with fallback UI
+- **Offline Detection** - Network status indicator
+- **Accessibility** - WCAG 2.1 AA compliant with keyboard navigation and screen reader support
+
+For detailed documentation, see [Design System Guide](frontend/DESIGN_SYSTEM.md).
 
 ## 🤝 Contributing
 

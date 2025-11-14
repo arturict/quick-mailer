@@ -19,6 +19,23 @@ export default defineConfig({
       ext: '.gz',
     }),
   ],
+  test: {
+    globals: true,
+    environment: 'happy-dom',
+    setupFiles: './src/test/setup.ts',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/mockData',
+        'dist/',
+      ],
+    },
+  },
   server: {
     port: 5173,
     proxy: {

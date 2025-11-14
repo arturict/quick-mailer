@@ -1,3 +1,5 @@
+import { fetchWithRetry, parseErrorResponse } from './utils/apiHelpers';
+
 export interface Email {
   id?: number;
   from_address: string;
@@ -74,17 +76,17 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const emailApi = {
   async sendEmail(request: SendEmailRequest): Promise<{ success: boolean; id: number; emailId: string }> {
-    const response = await fetch(`${API_BASE_URL}/emails`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/emails`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
-    });
+    }, { maxRetries: 2 }); // Fewer retries for POST requests
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to send email');
+      const errorMessage = await parseErrorResponse(response);
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -103,20 +105,22 @@ export const emailApi = {
     if (searchParams?.dateFrom) params.append('dateFrom', searchParams.dateFrom);
     if (searchParams?.dateTo) params.append('dateTo', searchParams.dateTo);
 
-    const response = await fetch(`${API_BASE_URL}/emails?${params}`);
+    const response = await fetchWithRetry(`${API_BASE_URL}/emails?${params}`);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch emails');
+      const errorMessage = await parseErrorResponse(response);
+      throw new Error(errorMessage);
     }
 
     return response.json();
   },
 
   async getEmail(id: number): Promise<Email> {
-    const response = await fetch(`${API_BASE_URL}/emails/${id}`);
+    const response = await fetchWithRetry(`${API_BASE_URL}/emails/${id}`);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch email');
+      const errorMessage = await parseErrorResponse(response);
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -125,66 +129,69 @@ export const emailApi = {
 
 export const templateApi = {
   async createTemplate(request: CreateTemplateRequest): Promise<{ success: boolean; id: number }> {
-    const response = await fetch(`${API_BASE_URL}/templates`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/templates`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
-    });
+    }, { maxRetries: 2 });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to create template');
+      const errorMessage = await parseErrorResponse(response);
+      throw new Error(errorMessage);
     }
 
     return response.json();
   },
 
   async getTemplates(): Promise<TemplateListResponse> {
-    const response = await fetch(`${API_BASE_URL}/templates`);
+    const response = await fetchWithRetry(`${API_BASE_URL}/templates`);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch templates');
+      const errorMessage = await parseErrorResponse(response);
+      throw new Error(errorMessage);
     }
 
     return response.json();
   },
 
   async getTemplate(id: number): Promise<Template> {
-    const response = await fetch(`${API_BASE_URL}/templates/${id}`);
+    const response = await fetchWithRetry(`${API_BASE_URL}/templates/${id}`);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch template');
+      const errorMessage = await parseErrorResponse(response);
+      throw new Error(errorMessage);
     }
 
     return response.json();
   },
 
   async updateTemplate(id: number, request: UpdateTemplateRequest): Promise<{ success: boolean }> {
-    const response = await fetch(`${API_BASE_URL}/templates/${id}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/templates/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
-    });
+    }, { maxRetries: 2 });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to update template');
+      const errorMessage = await parseErrorResponse(response);
+      throw new Error(errorMessage);
     }
 
     return response.json();
   },
 
   async deleteTemplate(id: number): Promise<{ success: boolean }> {
-    const response = await fetch(`${API_BASE_URL}/templates/${id}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/templates/${id}`, {
       method: 'DELETE',
-    });
+    }, { maxRetries: 2 });
 
     if (!response.ok) {
-      throw new Error('Failed to delete template');
+      const errorMessage = await parseErrorResponse(response);
+      throw new Error(errorMessage);
     }
 
     return response.json();
