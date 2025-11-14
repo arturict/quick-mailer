@@ -4,6 +4,7 @@ import { Send, FileText, Mail, User } from 'lucide-react';
 import { emailApi, templateApi, SendEmailRequest, Template } from '../api';
 import { showToast } from './ui/Toast';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { FileUpload } from './FileUpload';
 
 interface EmailComposerProps {
   onEmailSent?: () => void;
@@ -23,6 +24,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
   const [templateVars, setTemplateVars] = useState<Record<string, string>>({});
   const [isHtmlMode, setIsHtmlMode] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
           }
         : formData;
 
-      const result = await emailApi.sendEmail(emailRequest);
+      const result = await emailApi.sendEmail(emailRequest, attachments);
       showToast.success(`Email sent successfully! ID: ${result.id}`);
       
       // Reset form
@@ -83,6 +85,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
       });
       setSelectedTemplate(null);
       setTemplateVars({});
+      setAttachments([]);
       
       onEmailSent?.();
     } catch (err) {
@@ -90,7 +93,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
     } finally {
       setIsSending(false);
     }
-  }, [selectedTemplate, formData, templateVars, onEmailSent]);
+  }, [selectedTemplate, formData, templateVars, attachments, onEmailSent]);
 
   const handleTemplateSelect = useCallback((templateId: string) => {
     if (!templateId) {
@@ -306,9 +309,25 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
           )}
 
           <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.35 }}
+            className="form-control"
+          >
+            <label className="label">
+              <span className="label-text">Attachments (Optional)</span>
+            </label>
+            <FileUpload 
+              files={attachments} 
+              onChange={setAttachments}
+              disabled={isSending}
+            />
+          </motion.div>
+
+          <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.35 }}
+            transition={{ delay: 0.4 }}
             className="card-actions justify-end pt-4"
           >
             <motion.button 

@@ -37,7 +37,14 @@ const EmailRow = memo(function EmailRow({
         {email.to_address}
       </td>
       <td className="hidden lg:table-cell truncate max-w-xs font-medium" title={email.subject}>
-        {email.subject}
+        <div className="flex items-center gap-2">
+          {email.subject}
+          {email.attachments && email.attachments.length > 0 && (
+            <span className="badge badge-sm badge-outline gap-1" title={`${email.attachments.length} attachment(s)`}>
+              📎 {email.attachments.length}
+            </span>
+          )}
+        </div>
       </td>
       <td>
         <span className={`badge badge-sm ${getStatusBadge(email.status)}`}>
@@ -442,6 +449,46 @@ export function EmailHistory() {
                 {selectedEmail.error_message && (
                   <div className="alert alert-error">
                     <strong>Error:</strong> {selectedEmail.error_message}
+                  </div>
+                )}
+                
+                {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
+                  <div>
+                    <strong className="text-sm opacity-70">Attachments ({selectedEmail.attachments.length}):</strong>
+                    <div className="space-y-2 mt-2">
+                      {selectedEmail.attachments.map((attachment) => (
+                        <div 
+                          key={attachment.id} 
+                          className="flex items-center justify-between p-3 bg-base-200 rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">
+                              {attachment.mime_type.startsWith('image/') ? '🖼️' : 
+                               attachment.mime_type === 'application/pdf' ? '📄' : 
+                               attachment.mime_type.includes('word') ? '📝' : 
+                               attachment.mime_type.includes('sheet') || attachment.mime_type.includes('excel') ? '📊' : 
+                               attachment.mime_type.includes('presentation') || attachment.mime_type.includes('powerpoint') ? '📽️' : 
+                               attachment.mime_type.includes('zip') ? '🗜️' : '📎'}
+                            </span>
+                            <div>
+                              <p className="text-sm font-medium">{attachment.original_filename}</p>
+                              <p className="text-xs text-base-content/60">
+                                {(attachment.size / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                          </div>
+                          <a
+                            href={`/api/attachments/${attachment.id}`}
+                            download={attachment.original_filename}
+                            className="btn btn-sm btn-ghost"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Download
+                          </a>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 

@@ -9,6 +9,17 @@ export interface Email {
   email_id?: string;
   error_message?: string;
   created_at?: string;
+  attachments?: AttachmentMetadata[];
+}
+
+export interface AttachmentMetadata {
+  id: number;
+  email_id: number;
+  filename: string;
+  original_filename: string;
+  mime_type: string;
+  size: number;
+  created_at?: string;
 }
 
 export interface EmailSearchParams {
@@ -73,7 +84,37 @@ export interface TemplateListResponse {
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const emailApi = {
-  async sendEmail(request: SendEmailRequest): Promise<{ success: boolean; id: number; emailId: string }> {
+  async sendEmail(request: SendEmailRequest, attachments?: File[]): Promise<{ success: boolean; id: number; emailId: string }> {
+    // If there are attachments, use FormData
+    if (attachments && attachments.length > 0) {
+      const formData = new FormData();
+      formData.append('from', request.from);
+      formData.append('to', request.to);
+      formData.append('subject', request.subject);
+      if (request.text) formData.append('text', request.text);
+      if (request.html) formData.append('html', request.html);
+      if (request.templateId) formData.append('templateId', request.templateId.toString());
+      if (request.variables) formData.append('variables', JSON.stringify(request.variables));
+      
+      // Append all attachments
+      attachments.forEach(file => {
+        formData.append('attachments', file);
+      });
+
+      const response = await fetch(`${API_BASE_URL}/emails`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send email');
+      }
+
+      return response.json();
+    }
+
+    // Otherwise use JSON
     const response = await fetch(`${API_BASE_URL}/emails`, {
       method: 'POST',
       headers: {
