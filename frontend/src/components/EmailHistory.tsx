@@ -44,7 +44,7 @@ export function EmailHistory() {
       
       setSearchParams(newSearchParams);
       setPage(1); // Reset to first page when search changes
-    }, 500); // 500ms debounce
+    }, 300); // 300ms debounce
 
     return () => clearTimeout(timer);
   }, [recipientInput, subjectInput, senderInput, statusFilter, dateFromInput, dateToInput]);
@@ -198,17 +198,30 @@ export function EmailHistory() {
             </div>
           </div>
 
-          {isLoading && emails.length === 0 ? (
+          {isLoading ? (
             <div className="text-center py-8">
               <span className="loading loading-spinner loading-lg"></span>
+              <p className="mt-2 text-sm text-base-content/50">Searching...</p>
             </div>
           ) : emails.length === 0 ? (
             <div className="text-center py-8 text-base-content/50">
-              No emails sent yet
+              {Object.keys(searchParams).length > 0 ? (
+                <>
+                  <div className="text-lg mb-2">🔍 No results found</div>
+                  <p className="text-sm">Try adjusting your search filters</p>
+                </>
+              ) : (
+                'No emails sent yet'
+              )}
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto relative">
+                {isLoading && emails.length > 0 && (
+                  <div className="absolute inset-0 bg-base-100/50 flex items-center justify-center z-10">
+                    <span className="loading loading-spinner loading-md"></span>
+                  </div>
+                )}
                 <table className="table table-zebra">
                   <thead>
                     <tr>
