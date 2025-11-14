@@ -1,6 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import { templateApi, Template } from '../api';
 import { TemplateEditor } from './TemplateEditor';
+
+// Memoized template row component
+const TemplateRow = memo(function TemplateRow({
+  template,
+  onEdit,
+  onDelete,
+}: {
+  template: Template;
+  onEdit: (template: Template) => void;
+  onDelete: (id: number) => void;
+}) {
+  return (
+    <tr>
+      <td className="font-medium">{template.name}</td>
+      <td className="text-sm opacity-70">{template.subject}</td>
+      <td>
+        <div className="flex gap-1 flex-wrap">
+          {template.variables?.map((v) => (
+            <span key={v} className="badge badge-sm badge-outline">
+              {v}
+            </span>
+          ))}
+        </div>
+      </td>
+      <td className="text-sm opacity-70">
+        {template.created_at && new Date(template.created_at).toLocaleDateString()}
+      </td>
+      <td>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(template)}
+            className="btn btn-ghost btn-xs"
+          >
+            ✏️ Edit
+          </button>
+          <button
+            onClick={() => onDelete(template.id!)}
+            className="btn btn-ghost btn-xs text-error"
+          >
+            🗑️ Delete
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+});
 
 export function TemplateManager() {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -9,7 +55,7 @@ export function TemplateManager() {
   const [showEditor, setShowEditor] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -20,13 +66,13 @@ export function TemplateManager() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadTemplates();
-  }, []);
+  }, [loadTemplates]);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (!confirm('Are you sure you want to delete this template?')) {
       return;
     }
@@ -37,23 +83,23 @@ export function TemplateManager() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete template');
     }
-  };
+  }, [loadTemplates]);
 
-  const handleEdit = (template: Template) => {
+  const handleEdit = useCallback((template: Template) => {
     setEditingTemplate(template);
     setShowEditor(true);
-  };
+  }, []);
 
-  const handleCreate = () => {
+  const handleCreate = useCallback(() => {
     setEditingTemplate(null);
     setShowEditor(true);
-  };
+  }, []);
 
-  const handleEditorClose = () => {
+  const handleEditorClose = useCallback(() => {
     setShowEditor(false);
     setEditingTemplate(null);
     loadTemplates();
-  };
+  }, [loadTemplates]);
 
   if (showEditor) {
     return <TemplateEditor template={editingTemplate} onClose={handleEditorClose} />;
@@ -100,38 +146,12 @@ export function TemplateManager() {
               </thead>
               <tbody>
                 {templates.map((template) => (
-                  <tr key={template.id}>
-                    <td className="font-medium">{template.name}</td>
-                    <td className="text-sm opacity-70">{template.subject}</td>
-                    <td>
-                      <div className="flex gap-1 flex-wrap">
-                        {template.variables?.map((v) => (
-                          <span key={v} className="badge badge-sm badge-outline">
-                            {v}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="text-sm opacity-70">
-                      {template.created_at && new Date(template.created_at).toLocaleDateString()}
-                    </td>
-                    <td>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(template)}
-                          className="btn btn-ghost btn-xs"
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(template.id!)}
-                          className="btn btn-ghost btn-xs text-error"
-                        >
-                          🗑️ Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  <TemplateRow
+                    key={template.id}
+                    template={template}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </tbody>
             </table>

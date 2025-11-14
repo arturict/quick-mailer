@@ -1,5 +1,41 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { emailApi, Email } from '../api';
+
+// Memoized email row component to prevent unnecessary re-renders
+const EmailRow = memo(function EmailRow({ 
+  email, 
+  onView,
+  formatDate,
+  getStatusBadge 
+}: { 
+  email: Email;
+  onView: (email: Email) => void;
+  formatDate: (dateString?: string) => string;
+  getStatusBadge: (status: string) => string;
+}) {
+  return (
+    <tr>
+      <td>{email.id}</td>
+      <td className="truncate max-w-xs">{email.from_address}</td>
+      <td className="truncate max-w-xs">{email.to_address}</td>
+      <td className="truncate max-w-xs">{email.subject}</td>
+      <td>
+        <span className={`badge ${getStatusBadge(email.status)}`}>
+          {email.status}
+        </span>
+      </td>
+      <td>{formatDate(email.created_at)}</td>
+      <td>
+        <button
+          className="btn btn-xs btn-ghost"
+          onClick={() => onView(email)}
+        >
+          View
+        </button>
+      </td>
+    </tr>
+  );
+});
 
 export function EmailHistory() {
   const [emails, setEmails] = useState<Email[]>([]);
@@ -91,26 +127,13 @@ export function EmailHistory() {
                   </thead>
                   <tbody>
                     {emails.map((email) => (
-                      <tr key={email.id}>
-                        <td>{email.id}</td>
-                        <td className="truncate max-w-xs">{email.from_address}</td>
-                        <td className="truncate max-w-xs">{email.to_address}</td>
-                        <td className="truncate max-w-xs">{email.subject}</td>
-                        <td>
-                          <span className={`badge ${getStatusBadge(email.status)}`}>
-                            {email.status}
-                          </span>
-                        </td>
-                        <td>{formatDate(email.created_at)}</td>
-                        <td>
-                          <button
-                            className="btn btn-xs btn-ghost"
-                            onClick={() => setSelectedEmail(email)}
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
+                      <EmailRow
+                        key={email.id}
+                        email={email}
+                        onView={setSelectedEmail}
+                        formatDate={formatDate}
+                        getStatusBadge={getStatusBadge}
+                      />
                     ))}
                   </tbody>
                 </table>
