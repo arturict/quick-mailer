@@ -1,4 +1,8 @@
 import { useState, lazy, Suspense } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, FileText, History, Sun, Moon, Keyboard } from 'lucide-react';
+import { Toaster } from './components/ui/Toast';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 // Lazy load components for code splitting
 const EmailComposer = lazy(() => import('./components/EmailComposer').then(module => ({ default: module.EmailComposer })));
@@ -8,64 +12,171 @@ const TemplateManager = lazy(() => import('./components/TemplateManager').then(m
 function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history'>('compose');
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const handleEmailSent = () => {
     setRefreshKey(prev => prev + 1);
   };
 
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'c',
+      ctrl: true,
+      callback: () => setActiveTab('compose'),
+      description: 'Go to Compose',
+    },
+    {
+      key: 't',
+      ctrl: true,
+      callback: () => setActiveTab('templates'),
+      description: 'Go to Templates',
+    },
+    {
+      key: 'h',
+      ctrl: true,
+      callback: () => setActiveTab('history'),
+      description: 'Go to History',
+    },
+    {
+      key: '?',
+      shift: true,
+      callback: () => setShowShortcuts(!showShortcuts),
+      description: 'Show shortcuts',
+    },
+  ]);
+
   return (
     <div className="min-h-screen bg-base-200">
-      <div className="navbar bg-base-100 shadow-lg">
+      <Toaster position="top-right" />
+      
+      <motion.div 
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        className="navbar bg-base-100 shadow-lg sticky top-0 z-50"
+      >
         <div className="flex-1">
-          <a className="btn btn-ghost text-xl">📧 Quick Mailer</a>
+          <a className="btn btn-ghost text-lg md:text-xl">
+            <Mail className="w-5 h-5 md:w-6 md:h-6 mr-2" />
+            <span className="hidden sm:inline">Quick Mailer</span>
+            <span className="sm:hidden">QM</span>
+          </a>
         </div>
-        <div className="flex-none">
-          <label className="swap swap-rotate">
+        <div className="flex-none gap-2">
+          <button
+            className="btn btn-ghost btn-circle btn-sm md:btn-md"
+            onClick={() => setShowShortcuts(!showShortcuts)}
+            aria-label="Show keyboard shortcuts"
+            title="Keyboard shortcuts (Shift + ?)"
+          >
+            <Keyboard className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+          <label className="swap swap-rotate btn btn-ghost btn-circle btn-sm md:btn-md" aria-label="Toggle theme">
             <input type="checkbox" className="theme-controller" value="dark" />
-            <svg className="swap-off fill-current w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"/></svg>
-            <svg className="swap-on fill-current w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z"/></svg>
+            <Sun className="swap-off w-4 h-4 md:w-5 md:h-5" />
+            <Moon className="swap-on w-4 h-4 md:w-5 md:h-5" />
           </label>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="container mx-auto p-4 space-y-6">
-        <div className="tabs tabs-boxed bg-base-100 shadow-lg">
+      <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6 max-w-7xl">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="tabs tabs-boxed bg-base-100 shadow-lg"
+        >
           <a 
-            className={`tab ${activeTab === 'compose' ? 'tab-active' : ''}`}
+            className={`tab gap-1 sm:gap-2 text-xs sm:text-sm ${activeTab === 'compose' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('compose')}
+            aria-label="Compose email (Ctrl+C)"
           >
-            📧 Compose
+            <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Compose</span>
           </a>
           <a 
-            className={`tab ${activeTab === 'templates' ? 'tab-active' : ''}`}
+            className={`tab gap-1 sm:gap-2 text-xs sm:text-sm ${activeTab === 'templates' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('templates')}
+            aria-label="View templates (Ctrl+T)"
           >
-            📋 Templates
+            <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Templates</span>
           </a>
           <a 
-            className={`tab ${activeTab === 'history' ? 'tab-active' : ''}`}
+            className={`tab gap-1 sm:gap-2 text-xs sm:text-sm ${activeTab === 'history' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('history')}
+            aria-label="View history (Ctrl+H)"
           >
-            📜 History
+            <History className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">History</span>
           </a>
-        </div>
+        </motion.div>
 
         <Suspense fallback={
           <div className="flex justify-center items-center p-12">
             <span className="loading loading-spinner loading-lg"></span>
           </div>
         }>
-          {activeTab === 'compose' && <EmailComposer onEmailSent={handleEmailSent} />}
-          {activeTab === 'templates' && <TemplateManager />}
-          {activeTab === 'history' && <EmailHistory key={refreshKey} />}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'compose' && <EmailComposer onEmailSent={handleEmailSent} />}
+              {activeTab === 'templates' && <TemplateManager />}
+              {activeTab === 'history' && <EmailHistory key={refreshKey} />}
+            </motion.div>
+          </AnimatePresence>
         </Suspense>
       </div>
 
       <footer className="footer footer-center p-4 bg-base-300 text-base-content mt-8">
         <div>
-          <p>Quick Mailer v1.0.0 - Simple transactional email sender</p>
+          <p className="text-sm opacity-70">Quick Mailer v1.0.0 - Simple transactional email sender</p>
         </div>
       </footer>
+
+      {/* Keyboard Shortcuts Modal */}
+      {showShortcuts && (
+        <dialog className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Keyboard className="w-5 h-5" />
+              Keyboard Shortcuts
+            </h3>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center p-2 hover:bg-base-200 rounded">
+                <span>Go to Compose</span>
+                <kbd className="kbd kbd-sm">Ctrl + C</kbd>
+              </div>
+              <div className="flex justify-between items-center p-2 hover:bg-base-200 rounded">
+                <span>Go to Templates</span>
+                <kbd className="kbd kbd-sm">Ctrl + T</kbd>
+              </div>
+              <div className="flex justify-between items-center p-2 hover:bg-base-200 rounded">
+                <span>Go to History</span>
+                <kbd className="kbd kbd-sm">Ctrl + H</kbd>
+              </div>
+              <div className="flex justify-between items-center p-2 hover:bg-base-200 rounded">
+                <span>Send Email (in compose)</span>
+                <kbd className="kbd kbd-sm">Ctrl + Enter</kbd>
+              </div>
+              <div className="flex justify-between items-center p-2 hover:bg-base-200 rounded">
+                <span>Show/Hide Shortcuts</span>
+                <kbd className="kbd kbd-sm">Shift + ?</kbd>
+              </div>
+            </div>
+            <div className="modal-action">
+              <button className="btn" onClick={() => setShowShortcuts(false)}>Close</button>
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button onClick={() => setShowShortcuts(false)}>close</button>
+          </form>
+        </dialog>
+      )}
     </div>
   );
 }
