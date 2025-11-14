@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { IEmailService, SendEmailParams, SendEmailResult } from './types';
+import type { IEmailService, SendEmailParams, SendEmailResult } from './types';
 
 export class ResendService implements IEmailService {
   private client: Resend;

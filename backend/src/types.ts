@@ -19,6 +19,15 @@ export interface SendEmailRequest {
   html?: string;
 }
 
+export interface EmailSearchParams {
+  recipient?: string;
+  subject?: string;
+  status?: 'sent' | 'failed' | 'pending';
+  sender?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 export interface EmailListResponse {
   emails: Email[];
   total: number;

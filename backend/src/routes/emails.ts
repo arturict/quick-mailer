@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { saveEmail, getEmails, getTotalEmailsCount, getEmailById } from '../db';
-import { SendEmailRequest, EmailListResponse } from '../types';
+import type { SendEmailRequest, EmailListResponse, EmailSearchParams } from '../types';
 import { EmailServiceFactory } from '../services/email';
 
 const emails = new Hono();
@@ -86,9 +86,19 @@ emails.get('/', async (c) => {
       return c.json({ error: 'Invalid pagination parameters' }, 400);
     }
 
+    // Extract search parameters
+    const searchParams: EmailSearchParams = {
+      recipient: c.req.query('recipient') || undefined,
+      subject: c.req.query('subject') || undefined,
+      status: c.req.query('status') as 'sent' | 'failed' | 'pending' | undefined,
+      sender: c.req.query('sender') || undefined,
+      dateFrom: c.req.query('dateFrom') || undefined,
+      dateTo: c.req.query('dateTo') || undefined,
+    };
+
     const offset = (page - 1) * perPage;
-    const emailsList = getEmails(perPage, offset);
-    const total = getTotalEmailsCount();
+    const emailsList = getEmails(perPage, offset, searchParams);
+    const total = getTotalEmailsCount(searchParams);
     const totalPages = Math.ceil(total / perPage);
 
     const response: EmailListResponse = {

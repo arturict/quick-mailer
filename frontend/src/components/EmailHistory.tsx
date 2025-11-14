@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { emailApi, Email } from '../api';
+import { useState, useEffect, useCallback } from 'react';
+import { emailApi, Email, EmailSearchParams } from '../api';
 
 export function EmailHistory() {
   const [emails, setEmails] = useState<Email[]>([]);
@@ -7,11 +7,20 @@ export function EmailHistory() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Search and filter state
+  const [searchParams, setSearchParams] = useState<EmailSearchParams>({});
+  const [recipientInput, setRecipientInput] = useState('');
+  const [subjectInput, setSubjectInput] = useState('');
+  const [senderInput, setSenderInput] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'sent' | 'failed' | 'pending' | ''>('');
+  const [dateFromInput, setDateFromInput] = useState('');
+  const [dateToInput, setDateToInput] = useState('');
 
   const loadEmails = async () => {
     setIsLoading(true);
     try {
-      const response = await emailApi.getEmails(page, 50);
+      const response = await emailApi.getEmails(page, 50, searchParams);
       setEmails(response.emails);
       setTotalPages(response.totalPages);
     } catch (error) {
@@ -21,9 +30,39 @@ export function EmailHistory() {
     }
   };
 
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const newSearchParams: EmailSearchParams = {};
+      
+      if (recipientInput.trim()) newSearchParams.recipient = recipientInput.trim();
+      if (subjectInput.trim()) newSearchParams.subject = subjectInput.trim();
+      if (senderInput.trim()) newSearchParams.sender = senderInput.trim();
+      if (statusFilter) newSearchParams.status = statusFilter as 'sent' | 'failed' | 'pending';
+      if (dateFromInput) newSearchParams.dateFrom = dateFromInput;
+      if (dateToInput) newSearchParams.dateTo = dateToInput;
+      
+      setSearchParams(newSearchParams);
+      setPage(1); // Reset to first page when search changes
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [recipientInput, subjectInput, senderInput, statusFilter, dateFromInput, dateToInput]);
+
   useEffect(() => {
     loadEmails();
-  }, [page]);
+  }, [page, searchParams]);
+
+  const clearFilters = useCallback(() => {
+    setRecipientInput('');
+    setSubjectInput('');
+    setSenderInput('');
+    setStatusFilter('');
+    setDateFromInput('');
+    setDateToInput('');
+    setSearchParams({});
+    setPage(1);
+  }, []);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -56,6 +95,107 @@ export function EmailHistory() {
                 '🔄'
               )}
             </button>
+          </div>
+
+          {/* Search and Filter Section */}
+          <div className="bg-base-200 rounded-lg p-4 space-y-3 mb-4">
+            <div className="flex flex-wrap gap-3">
+              {/* Search by recipient */}
+              <div className="form-control flex-1 min-w-[200px]">
+                <label className="label py-1">
+                  <span className="label-text text-xs">Search Recipient</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Email address..."
+                  className="input input-sm input-bordered"
+                  value={recipientInput}
+                  onChange={(e) => setRecipientInput(e.target.value)}
+                />
+              </div>
+
+              {/* Search by subject */}
+              <div className="form-control flex-1 min-w-[200px]">
+                <label className="label py-1">
+                  <span className="label-text text-xs">Search Subject</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Subject keywords..."
+                  className="input input-sm input-bordered"
+                  value={subjectInput}
+                  onChange={(e) => setSubjectInput(e.target.value)}
+                />
+              </div>
+
+              {/* Search by sender */}
+              <div className="form-control flex-1 min-w-[200px]">
+                <label className="label py-1">
+                  <span className="label-text text-xs">Search Sender</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="From address..."
+                  className="input input-sm input-bordered"
+                  value={senderInput}
+                  onChange={(e) => setSenderInput(e.target.value)}
+                />
+              </div>
+
+              {/* Status filter */}
+              <div className="form-control min-w-[150px]">
+                <label className="label py-1">
+                  <span className="label-text text-xs">Status</span>
+                </label>
+                <select
+                  className="select select-sm select-bordered"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                >
+                  <option value="">All</option>
+                  <option value="sent">Sent</option>
+                  <option value="failed">Failed</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 items-end">
+              {/* Date from */}
+              <div className="form-control min-w-[180px]">
+                <label className="label py-1">
+                  <span className="label-text text-xs">Date From</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  className="input input-sm input-bordered"
+                  value={dateFromInput}
+                  onChange={(e) => setDateFromInput(e.target.value)}
+                />
+              </div>
+
+              {/* Date to */}
+              <div className="form-control min-w-[180px]">
+                <label className="label py-1">
+                  <span className="label-text text-xs">Date To</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  className="input input-sm input-bordered"
+                  value={dateToInput}
+                  onChange={(e) => setDateToInput(e.target.value)}
+                />
+              </div>
+
+              {/* Clear filters button */}
+              <button
+                className="btn btn-sm btn-ghost"
+                onClick={clearFilters}
+                disabled={!recipientInput && !subjectInput && !senderInput && !statusFilter && !dateFromInput && !dateToInput}
+              >
+                🗑️ Clear Filters
+              </button>
+            </div>
           </div>
 
           {isLoading && emails.length === 0 ? (

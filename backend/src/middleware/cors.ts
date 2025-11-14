@@ -1,4 +1,4 @@
-import { Context, Next } from 'hono';
+import type { Context, Next } from 'hono';
 
 export async function corsMiddleware(c: Context, next: Next) {
   c.header('Access-Control-Allow-Origin', '*');
