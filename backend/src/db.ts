@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { Email } from './types';
+import { Email, Attachment } from './types';
 
 const dbPath = process.env.DATABASE_PATH || './data/emails.db';
 export const db = new Database(dbPath);
@@ -21,8 +21,22 @@ db.run(`
   )
 `);
 
+db.run(`
+  CREATE TABLE IF NOT EXISTS attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    content_type TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    file_path TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (email_id) REFERENCES emails(id) ON DELETE CASCADE
+  )
+`);
+
 db.run(`CREATE INDEX IF NOT EXISTS idx_created_at ON emails(created_at DESC)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_status ON emails(status)`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_attachments_email_id ON attachments(email_id)`);
 
 export const insertEmail = db.prepare(`
   INSERT INTO emails (from_address, to_address, subject, body_text, body_html, status, email_id, error_message)
@@ -41,6 +55,15 @@ export const countEmails = db.prepare(`
 
 export const selectEmailById = db.prepare(`
   SELECT * FROM emails WHERE id = ?
+`);
+
+export const insertAttachment = db.prepare(`
+  INSERT INTO attachments (email_id, filename, content_type, size, file_path)
+  VALUES (?, ?, ?, ?, ?)
+`);
+
+export const selectAttachmentsByEmailId = db.prepare(`
+  SELECT * FROM attachments WHERE email_id = ?
 `);
 
 export function saveEmail(email: Omit<Email, 'id' | 'created_at'>) {
@@ -68,6 +91,21 @@ export function getTotalEmailsCount(): number {
 
 export function getEmailById(id: number): Email | undefined {
   return selectEmailById.get(id) as Email | undefined;
+}
+
+export function saveAttachment(attachment: Omit<Attachment, 'id' | 'created_at'>) {
+  const result = insertAttachment.run(
+    attachment.email_id,
+    attachment.filename,
+    attachment.content_type,
+    attachment.size,
+    attachment.file_path
+  );
+  return result.lastInsertRowid;
+}
+
+export function getAttachmentsByEmailId(emailId: number): Attachment[] {
+  return selectAttachmentsByEmailId.all(emailId) as Attachment[];
 }
 
 console.log('✅ Database initialized:', dbPath);

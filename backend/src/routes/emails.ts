@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { saveEmail, getEmails, getTotalEmailsCount, getEmailById } from '../db';
+import { saveEmail, getEmails, getTotalEmailsCount, getEmailById, saveAttachment, getAttachmentsByEmailId } from '../db';
 import { SendEmailRequest, EmailListResponse } from '../types';
 import { EmailServiceFactory } from '../services/email';
 
@@ -23,6 +23,20 @@ emails.post('/', async (c) => {
       return c.json({ error: 'Missing required fields: from, to, subject' }, 400);
     }
 
+    // Validate attachments size (max 10MB per file)
+    if (body.attachments && body.attachments.length > 0) {
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+      for (const attachment of body.attachments) {
+        // Estimate size from base64 content
+        const estimatedSize = Math.ceil((attachment.content.length * 3) / 4);
+        if (estimatedSize > MAX_FILE_SIZE) {
+          return c.json({ 
+            error: `Attachment ${attachment.filename} exceeds 10MB size limit` 
+          }, 400);
+        }
+      }
+    }
+
     const allowedAddresses = (process.env.FROM_ADDRESSES || '').split(',').map(a => a.trim());
     const fromEmail = body.from.match(/<(.+?)>|(.+)/)?.[1] || body.from;
     
@@ -33,12 +47,20 @@ emails.post('/', async (c) => {
       }, 403);
     }
 
+    // Prepare attachments for email service
+    const attachmentsForService = body.attachments?.map(att => ({
+      filename: att.filename,
+      content: att.content,
+      contentType: att.contentType,
+    }));
+
     const result = await emailService.send({
       from: body.from,
       to: body.to,
       subject: body.subject,
       text: body.text,
       html: body.html,
+      attachments: attachmentsForService,
     });
 
     const emailId = saveEmail({
@@ -51,6 +73,21 @@ emails.post('/', async (c) => {
       email_id: result.messageId,
       error_message: result.error,
     });
+
+    // Save attachments metadata to database
+    if (result.success && body.attachments && body.attachments.length > 0) {
+      for (const attachment of body.attachments) {
+        // Estimate size from base64 content
+        const size = Math.ceil((attachment.content.length * 3) / 4);
+        saveAttachment({
+          email_id: Number(emailId),
+          filename: attachment.filename,
+          content_type: attachment.contentType,
+          size: size,
+          file_path: '', // We're not storing files on disk, just metadata
+        });
+      }
+    }
 
     if (!result.success) {
       console.error('❌ Failed to send email:', result.error);
@@ -123,7 +160,14 @@ emails.get('/:id', async (c) => {
       return c.json({ error: 'Email not found' }, 404);
     }
 
-    return c.json(email);
+    // Fetch attachments for this email
+    const attachments = getAttachmentsByEmailId(id);
+    const emailWithAttachments = {
+      ...email,
+      attachments: attachments,
+    };
+
+    return c.json(emailWithAttachments);
   } catch (error) {
     console.error('❌ Error fetching email:', error);
     return c.json({ 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { emailApi, SendEmailRequest } from '../api';
+import { emailApi, SendEmailRequest, AttachmentData } from '../api';
+import { FileUpload } from './FileUpload';
 
 interface EmailComposerProps {
   onEmailSent?: () => void;
@@ -13,6 +14,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
     subject: '',
     text: '',
     html: '',
+    attachments: [],
   });
   const [isHtmlMode, setIsHtmlMode] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -42,6 +44,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
         subject: '',
         text: '',
         html: '',
+        attachments: [],
       });
       onEmailSent?.();
     } catch (err) {
@@ -49,6 +52,10 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleFilesChange = (files: AttachmentData[]) => {
+    setFormData({ ...formData, attachments: files });
   };
 
   return (
@@ -141,6 +148,8 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
               required
             />
           </div>
+
+          <FileUpload onFilesChange={handleFilesChange} />
 
           <div className="card-actions justify-end">
             <button 

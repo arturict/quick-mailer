@@ -9,6 +9,23 @@ export interface Email {
   email_id?: string;
   error_message?: string;
   created_at?: string;
+  attachments?: Attachment[];
+}
+
+export interface Attachment {
+  id?: number;
+  email_id: number;
+  filename: string;
+  content_type: string;
+  size: number;
+  file_path: string;
+  created_at?: string;
+}
+
+export interface AttachmentData {
+  filename: string;
+  content: string; // base64 encoded
+  contentType: string;
 }
 
 export interface SendEmailRequest {
@@ -17,6 +34,7 @@ export interface SendEmailRequest {
   subject: string;
   text?: string;
   html?: string;
+  attachments?: AttachmentData[];
 }
 
 export interface EmailListResponse {
