@@ -1,0 +1,54 @@
+You are tasked with creating a Bun + Hono backend API for an email sender application.
+
+Requirements:
+1. Initialize a Bun project with TypeScript
+2. Setup Hono server with the following routes:
+   - POST /api/emails - Send email via Resend API
+   - GET /api/emails - Get all sent emails with pagination
+   - GET /api/emails/:id - Get single email details
+
+3. Database: Use better-sqlite3 for SQLite with this schema:
+   ```sql
+   CREATE TABLE emails (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     from_address TEXT NOT NULL,
+     to_address TEXT NOT NULL,
+     subject TEXT NOT NULL,
+     body_text TEXT,
+     body_html TEXT,
+     status TEXT NOT NULL DEFAULT 'sent',
+     email_id TEXT,
+     error_message TEXT,
+     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+   );
+   ```
+
+4. Environment variables:
+   - RESEND_API_KEY
+   - FROM_ADDRESSES (comma-separated)
+   - DEFAULT_SENDER_NAME
+   - PORT (default 3000)
+   - DATABASE_PATH (default ./data/emails.db)
+
+5. Features:
+   - CORS enabled
+   - Request validation
+   - Error handling
+   - Logging
+
+6. Dependencies needed:
+   - hono
+   - resend
+   - better-sqlite3
+   - @types/better-sqlite3
+
+Create the following structure:
+- package.json
+- tsconfig.json
+- src/index.ts (main server)
+- src/db.ts (database setup)
+- src/routes/emails.ts (email routes)
+- src/middleware/cors.ts (CORS middleware)
+- src/types.ts (TypeScript types)
+
+Make it production-ready with proper error handling and validation.

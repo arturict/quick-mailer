@@ -1,0 +1,17 @@
+services:
+  quick-mailer:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - FROM_ADDRESSES=${FROM_ADDRESSES}
+      - DEFAULT_SENDER_NAME=${DEFAULT_SENDER_NAME:-Quick Mailer}
+      - PORT=3000
+      - DATABASE_PATH=/app/backend/data/emails.db
+    volumes:
+      - email-data:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  email-data:
