@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { Email } from './types';
+import { Email, Template } from './types';
 
 const dbPath = process.env.DATABASE_PATH || './data/emails.db';
 export const db = new Database(dbPath);
@@ -23,6 +23,22 @@ db.run(`
 
 db.run(`CREATE INDEX IF NOT EXISTS idx_created_at ON emails(created_at DESC)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_status ON emails(status)`);
+
+// Templates table
+db.run(`
+  CREATE TABLE IF NOT EXISTS templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    subject TEXT NOT NULL,
+    body_text TEXT,
+    body_html TEXT,
+    variables TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
 
 export const insertEmail = db.prepare(`
   INSERT INTO emails (from_address, to_address, subject, body_text, body_html, status, email_id, error_message)
@@ -68,6 +84,70 @@ export function getTotalEmailsCount(): number {
 
 export function getEmailById(id: number): Email | undefined {
   return selectEmailById.get(id) as Email | undefined;
+}
+
+// Template operations
+export const insertTemplate = db.prepare(`
+  INSERT INTO templates (name, subject, body_text, body_html, variables)
+  VALUES (?, ?, ?, ?, ?)
+`);
+
+export const selectTemplates = db.prepare(`
+  SELECT * FROM templates
+  ORDER BY created_at DESC
+`);
+
+export const selectTemplateById = db.prepare(`
+  SELECT * FROM templates WHERE id = ?
+`);
+
+export const updateTemplate = db.prepare(`
+  UPDATE templates
+  SET name = ?, subject = ?, body_text = ?, body_html = ?, variables = ?, updated_at = CURRENT_TIMESTAMP
+  WHERE id = ?
+`);
+
+export const deleteTemplate = db.prepare(`
+  DELETE FROM templates WHERE id = ?
+`);
+
+export function saveTemplate(template: Omit<Template, 'id' | 'created_at' | 'updated_at'>) {
+  const result = insertTemplate.run(
+    template.name,
+    template.subject,
+    template.body_text || null,
+    template.body_html || null,
+    template.variables || null
+  );
+  return result.lastInsertRowid;
+}
+
+export function getTemplates(): Template[] {
+  return selectTemplates.all() as Template[];
+}
+
+export function getTemplateById(id: number): Template | undefined {
+  return selectTemplateById.get(id) as Template | undefined;
+}
+
+export function updateTemplateById(id: number, template: Partial<Template>) {
+  const existing = getTemplateById(id);
+  if (!existing) return false;
+
+  updateTemplate.run(
+    template.name !== undefined ? template.name : existing.name,
+    template.subject !== undefined ? template.subject : existing.subject,
+    template.body_text !== undefined ? template.body_text : existing.body_text || null,
+    template.body_html !== undefined ? template.body_html : existing.body_html || null,
+    template.variables !== undefined ? template.variables : existing.variables || null,
+    id
+  );
+  return true;
+}
+
+export function deleteTemplateById(id: number): boolean {
+  const result = deleteTemplate.run(id);
+  return result.changes > 0;
 }
 
 console.log('✅ Database initialized:', dbPath);

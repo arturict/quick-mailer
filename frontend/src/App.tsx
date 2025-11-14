@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { EmailComposer } from './components/EmailComposer';
 import { EmailHistory } from './components/EmailHistory';
+import { TemplateManager } from './components/TemplateManager';
 
 function App() {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history'>('compose');
 
   const handleEmailSent = () => {
     setRefreshKey(prev => prev + 1);
@@ -25,8 +27,30 @@ function App() {
       </div>
 
       <div className="container mx-auto p-4 space-y-6">
-        <EmailComposer onEmailSent={handleEmailSent} />
-        <EmailHistory key={refreshKey} />
+        <div className="tabs tabs-boxed bg-base-100 shadow-lg">
+          <a 
+            className={`tab ${activeTab === 'compose' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('compose')}
+          >
+            📧 Compose
+          </a>
+          <a 
+            className={`tab ${activeTab === 'templates' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('templates')}
+          >
+            📋 Templates
+          </a>
+          <a 
+            className={`tab ${activeTab === 'history' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            📜 History
+          </a>
+        </div>
+
+        {activeTab === 'compose' && <EmailComposer onEmailSent={handleEmailSent} />}
+        {activeTab === 'templates' && <TemplateManager />}
+        {activeTab === 'history' && <EmailHistory key={refreshKey} />}
       </div>
 
       <footer className="footer footer-center p-4 bg-base-300 text-base-content mt-8">
