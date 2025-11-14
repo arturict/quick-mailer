@@ -2,22 +2,28 @@
 
 > Simple transactional email sender with history tracking
 
-Local-only web app for sending emails via Resend/Postal. No authentication needed (VPN-protected).
+Local-only web app for sending emails via Resend with full history tracking. Perfect for VPN-protected deployments.
+
+[![GitHub](https://img.shields.io/github/license/arturict/quick-mailer)](https://github.com/arturict/quick-mailer)
+[![Docker](https://img.shields.io/badge/docker-ready-blue)](https://www.docker.com/)
 
 ## ✨ Features
 
-- **Email Composer** - Send emails with custom From/To/Subject/Body
-- **From Address Selector** - Choose from configured sender addresses
-- **Email History** - Track all sent emails with full details
-- **Templates** - Pre-defined email templates (optional)
-- **SQLite Database** - Lightweight local storage
-- **Docker Deployment** - Easy local setup
+- 📤 **Email Composer** - Send emails with custom From/To/Subject/Body
+- 📋 **From Address Selector** - Choose from configured sender addresses
+- 📜 **Email History** - Track all sent emails with full details and pagination
+- 🎨 **HTML & Plain Text** - Support for both HTML and plain text emails
+- 💾 **SQLite Database** - Lightweight local storage with WAL mode
+- 🐳 **Docker Deployment** - Production-ready containerization
+- ⚡ **Fast & Modern** - Built with Bun, Hono, React 19, Vite, and Tailwind CSS
 
 ## 🚀 Quick Start
 
+### Using Docker (Recommended)
+
 ```bash
 # Clone the repository
-git clone <repo-url>
+git clone https://github.com/arturict/quick-mailer.git
 cd quick-mailer
 
 # Configure environment
@@ -31,20 +37,165 @@ docker-compose up -d
 open http://localhost:3000
 ```
 
+### Manual Development Setup
+
+**Backend (Bun + Hono)**
+```bash
+cd backend
+bun install
+bun run dev  # Runs on http://localhost:3000
+```
+
+**Frontend (React + Vite)**
+```bash
+cd frontend
+npm install
+npm run dev  # Runs on http://localhost:5173
+```
+
 ## 🛠️ Tech Stack
 
-- **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS + DaisyUI
-- **Backend:** Bun + Hono (lightweight API)
-- **Database:** SQLite
-- **Email:** Resend API
-- **Deploy:** Docker
+### Backend
+- **Runtime:** [Bun](https://bun.sh) - Fast all-in-one JavaScript runtime
+- **Framework:** [Hono](https://hono.dev) - Ultrafast web framework
+- **Database:** SQLite (via bun:sqlite)
+- **Email:** [Resend](https://resend.com) API
 
-## 📋 Development
+### Frontend
+- **Framework:** React 19 + TypeScript
+- **Build Tool:** Vite 7
+- **Styling:** Tailwind CSS 4 + DaisyUI
+- **State:** React Hooks
 
-See [MVP.md](./MVP.md) for the complete development plan.
+### DevOps
+- **Container:** Docker + Docker Compose
+- **Deployment:** Single container deployment
 
-**Status:** 🚧 In Development
+## ⚙️ Configuration
+
+Create a `.env` file in the root directory:
+
+```env
+# Resend API Configuration (Required)
+RESEND_API_KEY=re_your_api_key_here
+
+# From Addresses - comma-separated list (Required)
+FROM_ADDRESSES=noreply@yourdomain.com,support@yourdomain.com
+
+# Optional Configuration
+DEFAULT_SENDER_NAME=Quick Mailer
+PORT=3000
+DATABASE_PATH=./data/emails.db
+```
+
+### Getting a Resend API Key
+
+1. Sign up at [resend.com](https://resend.com)
+2. Verify your domain
+3. Create an API key
+4. Add it to your `.env` file
+
+## 📋 API Endpoints
+
+```
+POST   /api/emails      - Send email
+GET    /api/emails      - Get email history (paginated)
+GET    /api/emails/:id  - Get single email details
+GET    /health          - Health check
+```
+
+## 🗄️ Database Schema
+
+```sql
+CREATE TABLE emails (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_address TEXT NOT NULL,
+  to_address TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  body_text TEXT,
+  body_html TEXT,
+  status TEXT NOT NULL DEFAULT 'sent',
+  email_id TEXT,
+  error_message TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## 🐳 Docker Deployment
+
+The application uses a multi-stage Docker build:
+
+1. **Backend Builder:** Compiles Bun application
+2. **Frontend Builder:** Builds React app with Vite
+3. **Production:** Slim Bun runtime serving both API and static files
+
+### Docker Commands
+
+```bash
+# Build and run
+docker-compose up --build
+
+# Run in background
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+```
+
+## 📊 Development Timeline
+
+- ✅ **Hour 1:** Backend (Bun + Hono + SQLite)
+- ✅ **Hour 2:** Frontend (React + Components)
+- ✅ **Hour 3:** Integration + Polish
+- ✅ **Hour 4:** Docker + Documentation
+
+**Total:** ~4 hours (MVP Complete)
+
+## 🔒 Security Notes
+
+- This application is designed for **local/VPN-protected deployments**
+- No authentication is implemented
+- Recommended to run behind a VPN or firewall
+- CORS is enabled for development (configure for production)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📝 License
 
-MIT
+MIT License - see [LICENSE](LICENSE) file for details
+
+## 🔗 Links
+
+- [Resend Documentation](https://resend.com/docs)
+- [Hono Documentation](https://hono.dev)
+- [Bun Documentation](https://bun.sh/docs)
+- [React Documentation](https://react.dev)
+
+## 🎯 Roadmap
+
+- [ ] Email templates with variables
+- [ ] Bulk email sending
+- [ ] Email scheduling
+- [ ] Attachment support
+- [ ] Search and filtering
+- [ ] Export email history
+- [ ] API authentication
+- [ ] Multiple provider support (Postal, SendGrid)
+
+---
+
+**Built with ❤️ using modern web technologies**
