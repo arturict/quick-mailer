@@ -9,6 +9,7 @@ Local-only web app for sending emails via Resend with full history tracking. Per
 
 ## ✨ Features
 
+### Core Features
 - 📤 **Email Composer** - Send emails with custom From/To/Subject/Body
 - 📋 **From Address Selector** - Choose from configured sender addresses
 - 📝 **Email Templates** - Create and manage reusable templates with variable substitution
@@ -16,7 +17,17 @@ Local-only web app for sending emails via Resend with full history tracking. Per
 - 🎨 **HTML & Plain Text** - Support for both HTML and plain text emails
 - 💾 **SQLite Database** - Lightweight local storage with WAL mode
 - 📧 **Multiple Email Providers** - Support for Resend API and any SMTP server
-- 🐳 **Docker Deployment** - Production-ready containerization
+
+### Production Features
+- 🐳 **Docker Deployment** - Multi-stage optimized builds
+- 🔒 **Security Hardening** - Non-root user, resource limits, health checks
+- 🔄 **Reverse Proxy** - Nginx with SSL/TLS support
+- 📊 **Structured Logging** - JSON logs with rotation
+- 💾 **Automated Backups** - Scripts for database and configuration backups
+- 🏥 **Health Monitoring** - Enhanced health checks for database and email providers
+- ⚡ **Performance** - Gzip compression, caching, connection pooling
+
+### Tech Stack
 - ⚡ **Fast & Modern** - Built with Bun, Hono, React 19, Vite, and Tailwind CSS
 
 ### Supported Email Providers
@@ -248,7 +259,7 @@ The application uses a multi-stage Docker build:
 2. **Frontend Builder:** Builds React app with Vite
 3. **Production:** Slim Bun runtime serving both API and static files
 
-### Docker Commands
+### Development Deployment
 
 ```bash
 # Build and run
@@ -266,6 +277,28 @@ docker-compose down
 # Stop and remove volumes
 docker-compose down -v
 ```
+
+### Production Deployment
+
+For production environments with SSL/TLS, reverse proxy, and monitoring:
+
+```bash
+# Use production configuration
+docker compose -f docker-compose.prod.yml up -d
+
+# With nginx reverse proxy
+docker compose -f docker-compose.prod.yml --profile with-nginx up -d
+```
+
+**See [Production Deployment Guide](docs/PRODUCTION.md) for complete setup instructions.**
+
+### Documentation
+
+- 📚 [Production Deployment Guide](docs/PRODUCTION.md) - Complete production setup
+- 🔐 [SSL/TLS Configuration](docs/SSL_TLS.md) - HTTPS setup with Let's Encrypt
+- 💾 [Backup & Restore](docs/BACKUP_RESTORE.md) - Data backup procedures
+- ⚙️ [Environment Variables](docs/ENVIRONMENT.md) - Configuration reference
+- 📧 [SMTP Setup](docs/SMTP.md) - SMTP provider configuration
 
 ## 📊 Development Timeline
 
