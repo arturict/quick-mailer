@@ -1,8 +1,10 @@
 import { Hono } from 'hono';
-import { saveEmail, getEmails, getTotalEmailsCount, getEmailById, getTemplateById } from '../db';
+import { saveEmail, getEmails, getTotalEmailsCount, getEmailById, getTemplateById, saveAttachment, getAttachmentsByEmailId } from '../db';
 import type { SendEmailRequest, EmailListResponse, EmailSearchParams } from '../types';
 import { EmailServiceFactory } from '../services/email';
 import { substituteVariables } from '../utils/template';
+import { validateFile, sanitizeFilename } from '../utils/fileValidation';
+import type { EmailAttachment } from '../services/email/types';
 
 const emails = new Hono();
 const emailService = EmailServiceFactory.create();
@@ -18,7 +20,49 @@ emailService.verify().then((isValid) => {
 
 emails.post('/', async (c) => {
   try {
-    const body = await c.req.json<SendEmailRequest>();
+    const contentType = c.req.header('content-type') || '';
+    let body: SendEmailRequest;
+    let attachmentFiles: EmailAttachment[] = [];
+
+    // Handle multipart/form-data for file uploads
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await c.req.formData();
+      
+      // Parse email data from form
+      body = {
+        from: formData.get('from') as string,
+        to: formData.get('to') as string,
+        subject: formData.get('subject') as string,
+        text: formData.get('text') as string || undefined,
+        html: formData.get('html') as string || undefined,
+        templateId: formData.get('templateId') ? parseInt(formData.get('templateId') as string) : undefined,
+        variables: formData.get('variables') ? JSON.parse(formData.get('variables') as string) : undefined,
+      };
+
+      // Process attachments
+      const files = formData.getAll('attachments');
+      for (const file of files) {
+        if (file instanceof File) {
+          const arrayBuffer = await file.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          
+          // Validate file
+          const validation = validateFile(file.name, file.size, file.type);
+          if (!validation.valid) {
+            return c.json({ error: validation.error }, 400);
+          }
+
+          attachmentFiles.push({
+            filename: file.name,
+            content: buffer,
+            contentType: file.type,
+          });
+        }
+      }
+    } else {
+      // Handle JSON request
+      body = await c.req.json<SendEmailRequest>();
+    }
 
     let subject = body.subject;
     let text = body.text;
@@ -53,14 +97,17 @@ emails.post('/', async (c) => {
       }, 403);
     }
 
+    // Send email with attachments
     const result = await emailService.send({
       from: body.from,
       to: body.to,
       subject,
       text,
       html,
+      attachments: attachmentFiles.length > 0 ? attachmentFiles : undefined,
     });
 
+    // Save email to database
     const emailId = saveEmail({
       from_address: body.from,
       to_address: body.to,
@@ -71,6 +118,21 @@ emails.post('/', async (c) => {
       email_id: result.messageId,
       error_message: result.error,
     });
+
+    // Save attachments to database
+    if (result.success && attachmentFiles.length > 0) {
+      for (const attachment of attachmentFiles) {
+        const sanitizedFilename = sanitizeFilename(attachment.filename);
+        saveAttachment({
+          email_id: emailId as number,
+          filename: sanitizedFilename,
+          original_filename: attachment.filename,
+          mime_type: attachment.contentType,
+          size: attachment.content.length,
+          file_data: attachment.content,
+        });
+      }
+    }
 
     if (!result.success) {
       console.error('❌ Failed to send email:', result.error);
@@ -153,7 +215,13 @@ emails.get('/:id', async (c) => {
       return c.json({ error: 'Email not found' }, 404);
     }
 
-    return c.json(email);
+    // Get attachments metadata (without file data)
+    const attachments = getAttachmentsByEmailId(id);
+
+    return c.json({
+      ...email,
+      attachments,
+    });
   } catch (error) {
     console.error('❌ Error fetching email:', error);
     return c.json({ 

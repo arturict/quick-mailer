@@ -3,6 +3,7 @@ import { serveStatic } from 'hono/bun';
 import { corsMiddleware } from './middleware/cors';
 import emailRoutes from './routes/emails';
 import templateRoutes from './routes/templates';
+import attachmentRoutes from './routes/attachments';
 import './db';
 
 const app = new Hono();
@@ -20,6 +21,7 @@ app.get('/health', (c) => {
 
 app.route('/api/emails', emailRoutes);
 app.route('/api/templates', templateRoutes);
+app.route('/api/attachments', attachmentRoutes);
 
 app.use('/*', serveStatic({ root: './public' }));
 app.use('/*', serveStatic({ path: './public/index.html' }));

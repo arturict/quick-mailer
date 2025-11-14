@@ -1,11 +1,18 @@
 export type EmailProvider = 'resend' | 'smtp';
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+}
+
 export interface SendEmailParams {
   from: string;
   to: string;
   subject: string;
   text?: string;
   html?: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface SendEmailResult {

@@ -27,13 +27,24 @@ export class SMTPService implements IEmailService {
 
   async send(params: SendEmailParams): Promise<SendEmailResult> {
     try {
-      const info = await this.transporter.sendMail({
+      const mailOptions: any = {
         from: params.from,
         to: params.to,
         subject: params.subject,
         text: params.text,
         html: params.html,
-      });
+      };
+
+      // Add attachments if present
+      if (params.attachments && params.attachments.length > 0) {
+        mailOptions.attachments = params.attachments.map(att => ({
+          filename: att.filename,
+          content: att.content,
+          contentType: att.contentType,
+        }));
+      }
+
+      const info = await this.transporter.sendMail(mailOptions);
 
       return {
         success: true,

@@ -10,13 +10,23 @@ export class ResendService implements IEmailService {
 
   async send(params: SendEmailParams): Promise<SendEmailResult> {
     try {
-      const { data, error } = await this.client.emails.send({
+      const emailData: any = {
         from: params.from,
         to: [params.to],
         subject: params.subject,
         text: params.text,
         html: params.html,
-      });
+      };
+
+      // Add attachments if present
+      if (params.attachments && params.attachments.length > 0) {
+        emailData.attachments = params.attachments.map(att => ({
+          filename: att.filename,
+          content: att.content,
+        }));
+      }
+
+      const { data, error } = await this.client.emails.send(emailData);
 
       if (error) {
         return {

@@ -43,37 +43,22 @@ db.run(`
 
 db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
 
-// Templates table
+// Attachments table
 db.run(`
-  CREATE TABLE IF NOT EXISTS templates (
+  CREATE TABLE IF NOT EXISTS attachments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    subject TEXT NOT NULL,
-    body_text TEXT,
-    body_html TEXT,
-    variables TEXT,
+    email_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    original_filename TEXT NOT NULL,
+    mime_type TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    file_data BLOB NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    FOREIGN KEY (email_id) REFERENCES emails (id) ON DELETE CASCADE
   )
 `);
 
-db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
-
-// Templates table
-db.run(`
-  CREATE TABLE IF NOT EXISTS templates (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    subject TEXT NOT NULL,
-    body_text TEXT,
-    body_html TEXT,
-    variables TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
-
-db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_attachment_email_id ON attachments(email_id)`);
 
 export const insertEmail = db.prepare(`
   INSERT INTO emails (from_address, to_address, subject, body_text, body_html, status, email_id, error_message)
@@ -222,6 +207,49 @@ export function updateTemplateById(id: number, template: Partial<Template>) {
 export function deleteTemplateById(id: number): boolean {
   const result = deleteTemplate.run(id);
   return result.changes > 0;
+}
+
+// Attachment operations
+export const insertAttachment = db.prepare(`
+  INSERT INTO attachments (email_id, filename, original_filename, mime_type, size, file_data)
+  VALUES (?, ?, ?, ?, ?, ?)
+`);
+
+export const selectAttachmentsByEmailId = db.prepare(`
+  SELECT id, email_id, filename, original_filename, mime_type, size, created_at 
+  FROM attachments 
+  WHERE email_id = ?
+`);
+
+export const selectAttachmentById = db.prepare(`
+  SELECT * FROM attachments WHERE id = ?
+`);
+
+export function saveAttachment(attachment: {
+  email_id: number;
+  filename: string;
+  original_filename: string;
+  mime_type: string;
+  size: number;
+  file_data: Buffer;
+}) {
+  const result = insertAttachment.run(
+    attachment.email_id,
+    attachment.filename,
+    attachment.original_filename,
+    attachment.mime_type,
+    attachment.size,
+    attachment.file_data
+  );
+  return result.lastInsertRowid;
+}
+
+export function getAttachmentsByEmailId(emailId: number) {
+  return selectAttachmentsByEmailId.all(emailId);
+}
+
+export function getAttachmentById(id: number) {
+  return selectAttachmentById.get(id);
 }
 
 console.log('✅ Database initialized:', dbPath);

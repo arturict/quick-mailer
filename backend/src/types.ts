@@ -77,3 +77,24 @@ export interface TemplateListResponse {
   templates: Template[];
   total: number;
 }
+
+export interface Attachment {
+  id?: number;
+  email_id: number;
+  filename: string;
+  original_filename: string;
+  mime_type: string;
+  size: number;
+  file_data?: Buffer;
+  created_at?: string;
+}
+
+export interface AttachmentMetadata {
+  id?: number;
+  email_id: number;
+  filename: string;
+  original_filename: string;
+  mime_type: string;
+  size: number;
+  created_at?: string;
+}
