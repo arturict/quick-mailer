@@ -80,16 +80,29 @@ export function EmailHistory() {
   const loadEmails = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Validate date range before making API call
+      if (searchParams.dateFrom && searchParams.dateTo) {
+        const dateFrom = new Date(searchParams.dateFrom);
+        const dateTo = new Date(searchParams.dateTo);
+        
+        if (dateFrom > dateTo) {
+          showToast.error('Start date must be before end date');
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const response = await emailApi.getEmails(page, 50, searchParams);
       setEmails(response.emails);
       setTotalPages(response.totalPages);
     } catch (error) {
       console.error('Failed to load emails:', error);
-      showToast.error('Failed to load email history');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load email history';
+      showToast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [page]);
+  }, [page, searchParams]);
 
   // Debounced search effect
   useEffect(() => {

@@ -4,7 +4,11 @@ import type { Email, EmailSearchParams, Template } from './types';
 const dbPath = process.env.DATABASE_PATH || './data/emails.db';
 export const db = new Database(dbPath);
 
-db.run('PRAGMA journal_mode = WAL');
+// Performance optimizations for SQLite
+db.run('PRAGMA journal_mode = WAL'); // Write-Ahead Logging for better concurrency
+db.run('PRAGMA synchronous = NORMAL'); // Balance between safety and performance
+db.run('PRAGMA cache_size = -64000'); // 64MB cache size for better query performance
+db.run('PRAGMA temp_store = MEMORY'); // Use memory for temporary tables
 
 db.run(`
   CREATE TABLE IF NOT EXISTS emails (
@@ -26,38 +30,8 @@ db.run(`CREATE INDEX IF NOT EXISTS idx_status ON emails(status)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_to_address ON emails(to_address)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_from_address ON emails(from_address)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_subject ON emails(subject)`);
-
-// Templates table
-db.run(`
-  CREATE TABLE IF NOT EXISTS templates (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    subject TEXT NOT NULL,
-    body_text TEXT,
-    body_html TEXT,
-    variables TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
-
-db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
-
-// Templates table
-db.run(`
-  CREATE TABLE IF NOT EXISTS templates (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    subject TEXT NOT NULL,
-    body_text TEXT,
-    body_html TEXT,
-    variables TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
-
-db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
+// Composite index for common search pattern: status + date range
+db.run(`CREATE INDEX IF NOT EXISTS idx_status_date ON emails(status, created_at DESC)`);
 
 // Templates table
 db.run(`
@@ -98,10 +72,18 @@ export function saveEmail(email: Omit<Email, 'id' | 'created_at'>) {
   return result.lastInsertRowid;
 }
 
+/**
+ * Builds a WHERE clause for email search queries.
+ * Uses parameterized queries to prevent SQL injection.
+ * 
+ * @param searchParams - Search and filter parameters
+ * @returns Object containing the WHERE clause and parameters array
+ */
 function buildWhereClause(searchParams: EmailSearchParams): { clause: string; params: any[] } {
   const conditions: string[] = [];
   const params: any[] = [];
 
+  // Use LIKE for partial matching on email addresses and subject
   if (searchParams.recipient) {
     conditions.push('to_address LIKE ?');
     params.push(`%${searchParams.recipient}%`);
@@ -122,6 +104,7 @@ function buildWhereClause(searchParams: EmailSearchParams): { clause: string; pa
     params.push(`%${searchParams.sender}%`);
   }
 
+  // Date range filtering - uses indexed created_at column
   if (searchParams.dateFrom) {
     conditions.push('created_at >= ?');
     params.push(searchParams.dateFrom);
@@ -136,6 +119,16 @@ function buildWhereClause(searchParams: EmailSearchParams): { clause: string; pa
   return { clause, params };
 }
 
+/**
+ * Retrieves emails with optional search/filter parameters.
+ * Uses prepared statements for security and performance.
+ * Results are ordered by created_at DESC (newest first).
+ * 
+ * @param limit - Maximum number of results to return
+ * @param offset - Number of results to skip (for pagination)
+ * @param searchParams - Optional search and filter parameters
+ * @returns Array of Email objects
+ */
 export function getEmails(limit: number, offset: number, searchParams: EmailSearchParams = {}): Email[] {
   const { clause, params } = buildWhereClause(searchParams);
   const query = `
@@ -148,6 +141,13 @@ export function getEmails(limit: number, offset: number, searchParams: EmailSear
   return stmt.all(...params, limit, offset) as Email[];
 }
 
+/**
+ * Gets the total count of emails matching search/filter parameters.
+ * Used for pagination calculations.
+ * 
+ * @param searchParams - Optional search and filter parameters
+ * @returns Total number of matching emails
+ */
 export function getTotalEmailsCount(searchParams: EmailSearchParams = {}): number {
   const { clause, params } = buildWhereClause(searchParams);
   const query = `SELECT COUNT(*) as count FROM emails ${clause}`;
