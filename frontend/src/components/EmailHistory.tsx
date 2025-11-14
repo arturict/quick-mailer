@@ -89,7 +89,7 @@ export function EmailHistory() {
     } finally {
       setIsLoading(false);
     }
-  }, [page]);
+  }, [page, searchParams]);
 
   // Debounced search effect
   useEffect(() => {

@@ -1,12 +1,21 @@
 import { Mail, Inbox, FileText, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+/**
+ * Props for the EmptyState component
+ */
 interface EmptyStateProps {
+  /** Icon variant to display */
   icon?: 'mail' | 'inbox' | 'template' | 'sparkles';
+  /** Title text to display */
   title: string;
+  /** Description text to display */
   description: string;
+  /** Optional action button configuration */
   action?: {
+    /** Button label */
     label: string;
+    /** Button click handler */
     onClick: () => void;
   };
 }
@@ -18,6 +27,27 @@ const iconComponents = {
   sparkles: Sparkles,
 };
 
+/**
+ * EmptyState component displays a friendly message when there's no content
+ * 
+ * Features:
+ * - Animated icon and text with spring physics
+ * - Optional call-to-action button
+ * - Multiple icon variants for different contexts
+ * 
+ * @example
+ * ```tsx
+ * <EmptyState
+ *   icon="inbox"
+ *   title="No emails yet"
+ *   description="Your emails will appear here"
+ *   action={{
+ *     label: "Send Email",
+ *     onClick: () => navigate('/compose')
+ *   }}
+ * />
+ * ```
+ */
 export function EmptyState({ 
   icon = 'inbox', 
   title, 

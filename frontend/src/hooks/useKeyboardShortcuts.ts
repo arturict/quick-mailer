@@ -1,14 +1,40 @@
 import { useEffect } from 'react';
 
+/**
+ * Configuration for a keyboard shortcut
+ */
 interface KeyboardShortcut {
+  /** The key to press */
   key: string;
+  /** Whether Ctrl (or Cmd on Mac) must be pressed */
   ctrl?: boolean;
+  /** Whether Shift must be pressed */
   shift?: boolean;
+  /** Whether Alt must be pressed */
   alt?: boolean;
+  /** The callback function to execute when the shortcut is triggered */
   callback: () => void;
+  /** Human-readable description of what the shortcut does */
   description: string;
 }
 
+/**
+ * Hook that sets up keyboard shortcuts for the component
+ * 
+ * @param shortcuts - Array of keyboard shortcut configurations
+ * 
+ * @example
+ * ```tsx
+ * useKeyboardShortcuts([
+ *   {
+ *     key: 's',
+ *     ctrl: true,
+ *     callback: () => handleSave(),
+ *     description: 'Save document'
+ *   }
+ * ]);
+ * ```
+ */
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -34,6 +60,9 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
   }, [shortcuts]);
 }
 
+/**
+ * Common keyboard shortcuts used throughout the application
+ */
 export const commonShortcuts = {
   compose: { key: 'c', ctrl: true, description: 'Compose new email' },
   templates: { key: 't', ctrl: true, description: 'View templates' },
