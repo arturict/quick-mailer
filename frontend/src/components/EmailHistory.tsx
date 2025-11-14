@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { emailApi, Email } from '../api';
 
 export function EmailHistory() {
@@ -8,7 +8,7 @@ export function EmailHistory() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadEmails = async () => {
+  const loadEmails = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await emailApi.getEmails(page, 50);
@@ -19,25 +19,33 @@ export function EmailHistory() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
     loadEmails();
-  }, [page]);
+  }, [loadEmails]);
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = useCallback((dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString();
-  };
+  }, []);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     const badges = {
       sent: 'badge-success',
       failed: 'badge-error',
       pending: 'badge-warning',
     };
     return badges[status as keyof typeof badges] || 'badge-ghost';
-  };
+  }, []);
+
+  const handlePreviousPage = useCallback(() => {
+    setPage(p => Math.max(1, p - 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setPage(p => Math.min(totalPages, p + 1));
+  }, [totalPages]);
 
   return (
     <div className="space-y-4">
@@ -111,7 +119,7 @@ export function EmailHistory() {
               <div className="flex justify-center gap-2 mt-4">
                 <button
                   className="btn btn-sm"
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  onClick={handlePreviousPage}
                   disabled={page === 1}
                 >
                   Previous
@@ -121,7 +129,7 @@ export function EmailHistory() {
                 </span>
                 <button
                   className="btn btn-sm"
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  onClick={handleNextPage}
                   disabled={page === totalPages}
                 >
                   Next

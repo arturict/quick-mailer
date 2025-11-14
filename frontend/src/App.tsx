@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { EmailComposer } from './components/EmailComposer';
-import { EmailHistory } from './components/EmailHistory';
-import { TemplateManager } from './components/TemplateManager';
+import { useState, lazy, Suspense } from 'react';
+
+// Lazy load components for code splitting
+const EmailComposer = lazy(() => import('./components/EmailComposer').then(module => ({ default: module.EmailComposer })));
+const EmailHistory = lazy(() => import('./components/EmailHistory').then(module => ({ default: module.EmailHistory })));
+const TemplateManager = lazy(() => import('./components/TemplateManager').then(module => ({ default: module.TemplateManager })));
 
 function App() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -48,9 +50,15 @@ function App() {
           </a>
         </div>
 
-        {activeTab === 'compose' && <EmailComposer onEmailSent={handleEmailSent} />}
-        {activeTab === 'templates' && <TemplateManager />}
-        {activeTab === 'history' && <EmailHistory key={refreshKey} />}
+        <Suspense fallback={
+          <div className="flex justify-center items-center p-12">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        }>
+          {activeTab === 'compose' && <EmailComposer onEmailSent={handleEmailSent} />}
+          {activeTab === 'templates' && <TemplateManager />}
+          {activeTab === 'history' && <EmailHistory key={refreshKey} />}
+        </Suspense>
       </div>
 
       <footer className="footer footer-center p-4 bg-base-300 text-base-content mt-8">

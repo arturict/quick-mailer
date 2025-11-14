@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { emailApi, templateApi, SendEmailRequest, Template } from '../api';
 
 interface EmailComposerProps {
@@ -37,7 +37,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
     });
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
@@ -74,9 +74,9 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
     } finally {
       setIsSending(false);
     }
-  };
+  }, [selectedTemplate, formData, templateVars, onEmailSent]);
 
-  const handleTemplateSelect = (templateId: string) => {
+  const handleTemplateSelect = useCallback((templateId: string) => {
     if (!templateId) {
       setSelectedTemplate(null);
       setTemplateVars({});
@@ -97,7 +97,15 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
       // Set HTML mode based on template
       setIsHtmlMode(!!template.body_html);
     }
-  };
+  }, [templates]);
+
+  const updateFormField = useCallback((field: keyof SendEmailRequest, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const updateTemplateVar = useCallback((varName: string, value: string) => {
+    setTemplateVars(prev => ({ ...prev, [varName]: value }));
+  }, []);
 
   return (
     <div className="card bg-base-100 shadow-xl">
@@ -126,7 +134,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
             <select 
               className="select select-bordered w-full"
               value={formData.from}
-              onChange={(e) => setFormData({ ...formData, from: e.target.value })}
+              onChange={(e) => updateFormField('from', e.target.value)}
               required
             >
               {fromAddresses.map(addr => (
@@ -144,7 +152,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
               className="input input-bordered w-full"
               placeholder="recipient@example.com"
               value={formData.to}
-              onChange={(e) => setFormData({ ...formData, to: e.target.value })}
+              onChange={(e) => updateFormField('to', e.target.value)}
               required
             />
           </div>
@@ -185,7 +193,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
                       className="input input-bordered flex-1"
                       placeholder={`Enter ${varName}...`}
                       value={templateVars[varName] || ''}
-                      onChange={(e) => setTemplateVars({ ...templateVars, [varName]: e.target.value })}
+                      onChange={(e) => updateTemplateVar(varName, e.target.value)}
                       required
                     />
                   </div>
@@ -205,7 +213,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
                   className="input input-bordered w-full"
                   placeholder="Email subject"
                   value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  onChange={(e) => updateFormField('subject', e.target.value)}
                   required
                 />
               </div>
@@ -229,10 +237,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
                   className="textarea textarea-bordered h-40"
                   placeholder={isHtmlMode ? '<p>HTML content</p>' : 'Plain text message'}
                   value={isHtmlMode ? formData.html : formData.text}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    [isHtmlMode ? 'html' : 'text']: e.target.value
-                  })}
+                  onChange={(e) => updateFormField(isHtmlMode ? 'html' : 'text', e.target.value)}
                   required
                 />
               </div>
