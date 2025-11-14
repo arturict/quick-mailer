@@ -1,5 +1,9 @@
 import { Database } from 'bun:sqlite';
+<<<<<<< HEAD
 import type { Email, EmailSearchParams, Template } from './types';
+=======
+import { Email, Template } from './types';
+>>>>>>> origin/master
 
 const dbPath = process.env.DATABASE_PATH || './data/emails.db';
 export const db = new Database(dbPath);
@@ -26,6 +30,22 @@ db.run(`CREATE INDEX IF NOT EXISTS idx_status ON emails(status)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_to_address ON emails(to_address)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_from_address ON emails(from_address)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_subject ON emails(subject)`);
+
+// Templates table
+db.run(`
+  CREATE TABLE IF NOT EXISTS templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    subject TEXT NOT NULL,
+    body_text TEXT,
+    body_html TEXT,
+    variables TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
 
 // Templates table
 db.run(`

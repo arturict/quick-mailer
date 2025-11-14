@@ -1,6 +1,10 @@
 import { Hono } from 'hono';
 import { saveEmail, getEmails, getTotalEmailsCount, getEmailById, getTemplateById } from '../db';
+<<<<<<< HEAD
 import type { SendEmailRequest, EmailListResponse, EmailSearchParams } from '../types';
+=======
+import { SendEmailRequest, EmailListResponse } from '../types';
+>>>>>>> origin/master
 import { EmailServiceFactory } from '../services/email';
 import { substituteVariables } from '../utils/template';
 

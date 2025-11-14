@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Eye, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { emailApi, Email, EmailSearchParams } from '../api';
+=======
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { RefreshCw, Eye, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { emailApi, Email } from '../api';
+>>>>>>> origin/master
 import { TableSkeleton } from './ui/LoadingSkeleton';
 import { EmptyState } from './ui/EmptyState';
 import { showToast } from './ui/Toast';
@@ -114,6 +121,7 @@ export function EmailHistory() {
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </motion.button>
+<<<<<<< HEAD
           </div>
 
           {/* Search and Filter Section */}
@@ -215,11 +223,14 @@ export function EmailHistory() {
                 🗑️ Clear Filters
               </button>
             </div>
+=======
+>>>>>>> origin/master
           </div>
 
           {isLoading && emails.length === 0 ? (
             <TableSkeleton rows={5} />
           ) : emails.length === 0 ? (
+<<<<<<< HEAD
             Object.keys(searchParams).length > 0 ? (
               <EmptyState
                 icon="sparkles"
@@ -241,6 +252,17 @@ export function EmailHistory() {
                 }}
               />
             )
+=======
+            <EmptyState
+              icon="inbox"
+              title="No emails sent yet"
+              description="Your email history will appear here once you send your first email."
+              action={{
+                label: "Compose Email",
+                onClick: () => window.dispatchEvent(new CustomEvent('navigate', { detail: 'compose' }))
+              }}
+            />
+>>>>>>> origin/master
           ) : (
             <>
               <div className="overflow-x-auto relative">
