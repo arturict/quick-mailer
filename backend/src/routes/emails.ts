@@ -106,7 +106,7 @@ emails.get('/', async (c) => {
       return c.json({ error: 'Invalid pagination parameters' }, 400);
     }
 
-    // Extract search parameters
+    // Extract and validate search parameters
     const searchParams: EmailSearchParams = {
       recipient: c.req.query('recipient') || undefined,
       subject: c.req.query('subject') || undefined,
@@ -115,6 +115,37 @@ emails.get('/', async (c) => {
       dateFrom: c.req.query('dateFrom') || undefined,
       dateTo: c.req.query('dateTo') || undefined,
     };
+
+    // Validate status parameter
+    if (searchParams.status && !['sent', 'failed', 'pending'].includes(searchParams.status)) {
+      return c.json({ error: 'Invalid status parameter. Must be: sent, failed, or pending' }, 400);
+    }
+
+    // Validate date range
+    if (searchParams.dateFrom && searchParams.dateTo) {
+      const dateFrom = new Date(searchParams.dateFrom);
+      const dateTo = new Date(searchParams.dateTo);
+      
+      if (isNaN(dateFrom.getTime())) {
+        return c.json({ error: 'Invalid dateFrom format. Use ISO 8601 format (YYYY-MM-DDTHH:mm)' }, 400);
+      }
+      if (isNaN(dateTo.getTime())) {
+        return c.json({ error: 'Invalid dateTo format. Use ISO 8601 format (YYYY-MM-DDTHH:mm)' }, 400);
+      }
+      if (dateFrom > dateTo) {
+        return c.json({ error: 'dateFrom must be before or equal to dateTo' }, 400);
+      }
+    } else if (searchParams.dateFrom && !searchParams.dateTo) {
+      const dateFrom = new Date(searchParams.dateFrom);
+      if (isNaN(dateFrom.getTime())) {
+        return c.json({ error: 'Invalid dateFrom format. Use ISO 8601 format (YYYY-MM-DDTHH:mm)' }, 400);
+      }
+    } else if (!searchParams.dateFrom && searchParams.dateTo) {
+      const dateTo = new Date(searchParams.dateTo);
+      if (isNaN(dateTo.getTime())) {
+        return c.json({ error: 'Invalid dateTo format. Use ISO 8601 format (YYYY-MM-DDTHH:mm)' }, 400);
+      }
+    }
 
     const offset = (page - 1) * perPage;
     const emailsList = getEmails(perPage, offset, searchParams);

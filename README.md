@@ -13,6 +13,7 @@ Local-only web app for sending emails via Resend with full history tracking. Per
 - 📋 **From Address Selector** - Choose from configured sender addresses
 - 📝 **Email Templates** - Create and manage reusable templates with variable substitution
 - 📜 **Email History** - Track all sent emails with full details and pagination
+- 🔍 **Search & Filter** - Advanced search by recipient, sender, subject, status, and date range
 - 🎨 **HTML & Plain Text** - Support for both HTML and plain text emails
 - 💾 **SQLite Database** - Lightweight local storage with WAL mode
 - 📧 **Multiple Email Providers** - Support for Resend API and any SMTP server
@@ -185,6 +186,63 @@ When sending, provide values:
 }
 ```
 
+## 🔍 Search and Filter Email History
+
+The email history page includes powerful search and filtering capabilities:
+
+### Available Filters
+
+- **Search Recipient** - Find emails by recipient email address (partial match)
+- **Search Subject** - Find emails by subject keywords (partial match)
+- **Search Sender** - Find emails by sender/from address (partial match)
+- **Status Filter** - Filter by email status:
+  - `sent` - Successfully sent emails
+  - `failed` - Failed delivery attempts
+  - `pending` - Emails pending delivery
+- **Date Range** - Filter by date range using datetime-local inputs
+  - Date From - Show emails sent on or after this date
+  - Date To - Show emails sent on or before this date
+
+### Features
+
+- **Real-time Search** - 300ms debounced search for smooth UX
+- **Combined Filters** - Use multiple filters together (all conditions are AND'ed)
+- **Validation** - Client and server-side validation for date ranges
+- **Clear Filters** - One-click button to reset all filters
+- **Performance** - Optimized with database indexes on all searchable fields
+- **Security** - Parameterized queries prevent SQL injection
+
+### API Usage
+
+Search parameters can be passed as query strings to the email history endpoint:
+
+```bash
+# Search by recipient
+GET /api/emails?recipient=john@example.com
+
+# Filter by status and date range
+GET /api/emails?status=sent&dateFrom=2024-01-01T00:00&dateTo=2024-12-31T23:59
+
+# Combined search
+GET /api/emails?recipient=example.com&subject=invoice&status=sent
+
+# With pagination
+GET /api/emails?page=2&perPage=50&sender=noreply
+```
+
+### Query Parameters
+
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `recipient` | string | Partial match on recipient email | `user@example.com` |
+| `subject` | string | Partial match on subject | `invoice` |
+| `sender` | string | Partial match on sender email | `noreply` |
+| `status` | enum | Exact match on status | `sent`, `failed`, `pending` |
+| `dateFrom` | datetime | Emails on or after this date | `2024-01-01T00:00` |
+| `dateTo` | datetime | Emails on or before this date | `2024-12-31T23:59` |
+| `page` | number | Page number (default: 1) | `2` |
+| `perPage` | number | Results per page (max: 100) | `50` |
+
 ## 📋 API Endpoints
 
 ### Emails
@@ -308,10 +366,10 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 - [x] **SMTP Support** - Generic SMTP server support
 - [x] **Email Templates** - Templates with variable substitution
+- [x] **Search and Filtering** - Advanced email history search with multiple filters
 - [ ] Bulk email sending
 - [ ] Email scheduling
 - [ ] Attachment support
-- [ ] Search and filtering
 - [ ] Export email history
 - [ ] API authentication
 - [ ] Multiple provider support (Postal, SendGrid)
