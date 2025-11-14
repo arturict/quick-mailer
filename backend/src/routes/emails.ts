@@ -1,10 +1,19 @@
 import { Hono } from 'hono';
-import { Resend } from 'resend';
 import { saveEmail, getEmails, getTotalEmailsCount, getEmailById } from '../db';
 import { SendEmailRequest, EmailListResponse } from '../types';
+import { EmailServiceFactory } from '../services/email';
 
 const emails = new Hono();
-const resend = new Resend(process.env.RESEND_API_KEY);
+const emailService = EmailServiceFactory.create();
+
+// Verify email service on startup
+emailService.verify().then((isValid) => {
+  if (isValid) {
+    console.log('✅ Email service verified and ready');
+  } else {
+    console.warn('⚠️  Email service verification failed - emails may not send');
+  }
+});
 
 emails.post('/', async (c) => {
   try {
@@ -24,9 +33,9 @@ emails.post('/', async (c) => {
       }, 403);
     }
 
-    const { data, error } = await resend.emails.send({
+    const result = await emailService.send({
       from: body.from,
-      to: [body.to],
+      to: body.to,
       subject: body.subject,
       text: body.text,
       html: body.html,
@@ -38,25 +47,25 @@ emails.post('/', async (c) => {
       subject: body.subject,
       body_text: body.text,
       body_html: body.html,
-      status: error ? 'failed' : 'sent',
-      email_id: data?.id,
-      error_message: error ? JSON.stringify(error) : undefined,
+      status: result.success ? 'sent' : 'failed',
+      email_id: result.messageId,
+      error_message: result.error,
     });
 
-    if (error) {
-      console.error('❌ Failed to send email:', error);
+    if (!result.success) {
+      console.error('❌ Failed to send email:', result.error);
       return c.json({ 
         error: 'Failed to send email', 
-        details: error,
+        details: result.error,
         savedId: emailId 
       }, 500);
     }
 
-    console.log('✅ Email sent:', data?.id);
+    console.log('✅ Email sent:', result.messageId);
     return c.json({ 
       success: true, 
       id: emailId,
-      emailId: data?.id 
+      emailId: result.messageId
     }, 201);
 
   } catch (error) {
