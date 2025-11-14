@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Save, Eye, Info } from 'lucide-react';
 import { templateApi, Template, CreateTemplateRequest } from '../api';
+import { showToast } from './ui/Toast';
 
 interface TemplateEditorProps {
   template: Template | null;
@@ -25,7 +28,6 @@ export function TemplateEditor({ template, onClose }: TemplateEditorProps) {
   });
   const [isHtmlMode, setIsHtmlMode] = useState(!!template?.body_html);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [previewVars, setPreviewVars] = useState<Record<string, string>>({});
 
   // Extract variables from current content
@@ -50,7 +52,6 @@ export function TemplateEditor({ template, onClose }: TemplateEditorProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setIsSaving(true);
 
     try {
@@ -64,86 +65,119 @@ export function TemplateEditor({ template, onClose }: TemplateEditorProps) {
 
       if (template?.id) {
         await templateApi.updateTemplate(template.id, request);
+        showToast.success(`Template "${formData.name}" updated successfully`);
       } else {
         await templateApi.createTemplate(request);
+        showToast.success(`Template "${formData.name}" created successfully`);
       }
 
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save template');
+      showToast.error(err instanceof Error ? err.message : 'Failed to save template');
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="card bg-base-100 shadow-xl">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="card bg-base-100 shadow-xl"
+    >
       <div className="card-body">
-        <div className="flex justify-between items-center">
-          <h2 className="card-title">
-            {template ? '✏️ Edit Template' : '➕ Create Template'}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="card-title flex items-center gap-2">
+            {template ? (
+              <>
+                <Save className="w-6 h-6" />
+                Edit Template
+              </>
+            ) : (
+              <>
+                <Save className="w-6 h-6" />
+                Create Template
+              </>
+            )}
           </h2>
-          <button onClick={onClose} className="btn btn-ghost btn-sm">
-            ← Back
-          </button>
+          <motion.button 
+            onClick={onClose} 
+            className="btn btn-ghost btn-sm gap-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </motion.button>
         </div>
 
-        {error && (
-          <div className="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="form-control">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="form-control"
+          >
             <label className="label">
-              <span className="label-text">Template Name</span>
+              <span className="label-text font-medium">Template Name</span>
             </label>
             <input
               type="text"
-              className="input input-bordered w-full"
+              className="input input-bordered w-full focus:outline-offset-0 transition-all"
               placeholder="e.g., Welcome Email"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
+              aria-label="Template name"
             />
-          </div>
+          </motion.div>
 
-          <div className="form-control">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15 }}
+            className="form-control"
+          >
             <label className="label">
-              <span className="label-text">Subject</span>
-              <span className="label-text-alt">Use {`{{variable}}`} for dynamic content</span>
+              <span className="label-text font-medium">Subject</span>
+              <span className="label-text-alt text-xs opacity-60">
+                Use {`{{variable}}`} for dynamic content
+              </span>
             </label>
             <input
               type="text"
-              className="input input-bordered w-full"
+              className="input input-bordered w-full focus:outline-offset-0 transition-all"
               placeholder="e.g., Welcome {{name}}!"
               value={formData.subject}
               onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
               required
+              aria-label="Email subject"
             />
-          </div>
+          </motion.div>
 
-          <div className="form-control">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="form-control"
+          >
             <label className="label">
-              <span className="label-text">Message</span>
+              <span className="label-text font-medium">Message</span>
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text mr-2">HTML Mode</span>
+                <label className="label cursor-pointer gap-2">
+                  <span className="label-text text-sm">HTML Mode</span>
                   <input
                     type="checkbox"
-                    className="toggle toggle-primary"
+                    className="toggle toggle-primary toggle-sm"
                     checked={isHtmlMode}
                     onChange={(e) => setIsHtmlMode(e.target.checked)}
+                    aria-label="Toggle HTML mode"
                   />
                 </label>
               </div>
             </label>
             <textarea
-              className="textarea textarea-bordered h-40"
+              className="textarea textarea-bordered h-40 focus:outline-offset-0 transition-all font-mono text-sm"
               placeholder={
                 isHtmlMode
                   ? '<h1>Hello {{name}}</h1><p>Welcome!</p>'
@@ -157,15 +191,18 @@ export function TemplateEditor({ template, onClose }: TemplateEditorProps) {
                 })
               }
               required
+              aria-label="Email message content"
             />
-          </div>
+          </motion.div>
 
           {detectedVariables.length > 0 && (
-            <div className="alert alert-info">
-              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="alert alert-info"
+            >
+              <Info className="w-5 h-5 flex-shrink-0" />
+              <div className="flex-1">
                 <h3 className="font-bold">Detected Variables:</h3>
                 <div className="flex gap-2 flex-wrap mt-1">
                   {detectedVariables.map((v) => (
@@ -175,20 +212,34 @@ export function TemplateEditor({ template, onClose }: TemplateEditorProps) {
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
-          <div className="divider">Preview</div>
+          <div className="divider">
+            <Eye className="w-4 h-4 inline mr-2" />
+            Preview
+          </div>
 
           {detectedVariables.length > 0 && (
-            <div className="space-y-2">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.25 }}
+              className="space-y-2"
+            >
               <label className="label">
-                <span className="label-text">Fill variables to preview:</span>
+                <span className="label-text font-medium">Fill variables to preview:</span>
               </label>
-              {detectedVariables.map((v) => (
-                <div key={v} className="form-control">
+              {detectedVariables.map((v, index) => (
+                <motion.div 
+                  key={v} 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.05 * index }}
+                  className="form-control"
+                >
                   <div className="input-group">
-                    <span className="bg-base-300 px-4 flex items-center min-w-[120px]">
+                    <span className="bg-base-300 px-4 flex items-center min-w-[120px] font-medium">
                       {v}
                     </span>
                     <input
@@ -199,19 +250,25 @@ export function TemplateEditor({ template, onClose }: TemplateEditorProps) {
                       onChange={(e) =>
                         setPreviewVars({ ...previewVars, [v]: e.target.value })
                       }
+                      aria-label={`Preview value for ${v}`}
                     />
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
 
-          <div className="card bg-base-200">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="card bg-base-200"
+          >
             <div className="card-body">
-              <h3 className="font-bold">Subject Preview:</h3>
-              <p>{substituteVariables(formData.subject, previewVars)}</p>
+              <h3 className="font-bold text-sm opacity-70">Subject Preview:</h3>
+              <p className="text-lg">{substituteVariables(formData.subject, previewVars)}</p>
               
-              <h3 className="font-bold mt-4">Body Preview:</h3>
+              <h3 className="font-bold text-sm opacity-70 mt-4">Body Preview:</h3>
               {isHtmlMode ? (
                 <div
                   className="p-4 bg-white text-black rounded border"
@@ -220,32 +277,50 @@ export function TemplateEditor({ template, onClose }: TemplateEditorProps) {
                   }}
                 />
               ) : (
-                <p className="whitespace-pre-wrap">
+                <p className="whitespace-pre-wrap p-4 bg-base-100 rounded">
                   {substituteVariables(formData.text, previewVars)}
                 </p>
               )}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="card-actions justify-end gap-2">
-            <button type="button" onClick={onClose} className="btn btn-ghost">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35 }}
+            className="card-actions justify-end gap-2 pt-4"
+          >
+            <motion.button 
+              type="button" 
+              onClick={onClose} 
+              className="btn btn-ghost"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               Cancel
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={isSaving}>
+            </motion.button>
+            <motion.button 
+              type="submit" 
+              className="btn btn-primary gap-2" 
+              disabled={isSaving}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               {isSaving ? (
                 <>
-                  <span className="loading loading-spinner"></span>
+                  <span className="loading loading-spinner loading-sm"></span>
                   Saving...
                 </>
-              ) : template ? (
-                '💾 Update Template'
               ) : (
-                '💾 Create Template'
+                <>
+                  <Save className="w-4 h-4" />
+                  {template ? 'Update Template' : 'Create Template'}
+                </>
               )}
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         </form>
       </div>
-    </div>
+    </motion.div>
   );
 }

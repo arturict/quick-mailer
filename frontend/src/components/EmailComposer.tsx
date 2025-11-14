@@ -1,5 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Send, FileText, Mail, User } from 'lucide-react';
 import { emailApi, templateApi, SendEmailRequest, Template } from '../api';
+import { showToast } from './ui/Toast';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 interface EmailComposerProps {
   onEmailSent?: () => void;
@@ -19,8 +23,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
   const [templateVars, setTemplateVars] = useState<Record<string, string>>({});
   const [isHtmlMode, setIsHtmlMode] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const addresses = (import.meta.env.VITE_FROM_ADDRESSES || 'noreply@example.com').split(',');
@@ -34,13 +37,26 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
       setTemplates(result.templates);
     }).catch(err => {
       console.error('Failed to load templates:', err);
+      showToast.error('Failed to load templates');
     });
   }, []);
 
+  // Keyboard shortcut for sending email (Ctrl+Enter)
+  useKeyboardShortcuts([
+    {
+      key: 'Enter',
+      ctrl: true,
+      callback: () => {
+        if (formRef.current && !isSending) {
+          formRef.current.requestSubmit();
+        }
+      },
+      description: 'Send email',
+    },
+  ]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
     setIsSending(true);
 
     try {
@@ -55,7 +71,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
         : formData;
 
       const result = await emailApi.sendEmail(emailRequest);
-      setSuccess(`Email sent successfully! ID: ${result.id}`);
+      showToast.success(`Email sent successfully! ID: ${result.id}`);
       
       // Reset form
       setFormData({
@@ -70,7 +86,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
       
       onEmailSent?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send email');
+      showToast.error(err instanceof Error ? err.message : 'Failed to send email');
     } finally {
       setIsSending(false);
     }
@@ -100,64 +116,84 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
   };
 
   return (
-    <div className="card bg-base-100 shadow-xl">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="card bg-base-100 shadow-xl"
+    >
       <div className="card-body">
-        <h2 className="card-title">📧 Compose Email</h2>
-        
-        {error && (
-          <div className="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span>{error}</span>
-          </div>
-        )}
+        <h2 className="card-title flex items-center gap-2">
+          <Mail className="w-6 h-6" />
+          Compose Email
+        </h2>
 
-        {success && (
-          <div className="alert alert-success">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span>{success}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="form-control">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="form-control"
+          >
             <label className="label">
-              <span className="label-text">From</span>
+              <span className="label-text flex items-center gap-2">
+                <User className="w-4 h-4" />
+                From
+              </span>
             </label>
             <select 
-              className="select select-bordered w-full"
+              className="select select-bordered w-full focus:outline-offset-0 transition-all"
               value={formData.from}
               onChange={(e) => setFormData({ ...formData, from: e.target.value })}
               required
+              aria-label="Select from address"
             >
               {fromAddresses.map(addr => (
                 <option key={addr} value={addr}>{addr}</option>
               ))}
             </select>
-          </div>
+          </motion.div>
 
-          <div className="form-control">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15 }}
+            className="form-control"
+          >
             <label className="label">
-              <span className="label-text">To</span>
+              <span className="label-text flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                To
+              </span>
             </label>
             <input
               type="email"
-              className="input input-bordered w-full"
+              className="input input-bordered w-full focus:outline-offset-0 transition-all"
               placeholder="recipient@example.com"
               value={formData.to}
               onChange={(e) => setFormData({ ...formData, to: e.target.value })}
               required
+              aria-label="Recipient email address"
             />
-          </div>
+          </motion.div>
 
           {templates.length > 0 && (
-            <div className="form-control">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="form-control"
+            >
               <label className="label">
-                <span className="label-text">📋 Use Template (Optional)</span>
+                <span className="label-text flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Use Template (Optional)
+                </span>
               </label>
               <select
-                className="select select-bordered w-full"
+                className="select select-bordered w-full focus:outline-offset-0 transition-all"
                 value={selectedTemplate?.id || ''}
                 onChange={(e) => handleTemplateSelect(e.target.value)}
+                aria-label="Select email template"
               >
                 <option value="">-- Custom Email --</option>
                 {templates.map(template => (
@@ -166,67 +202,91 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
                   </option>
                 ))}
               </select>
-            </div>
+            </motion.div>
           )}
 
           {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
-            <div className="space-y-2">
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-2"
+            >
               <label className="label">
-                <span className="label-text">Template Variables</span>
+                <span className="label-text font-medium">Template Variables</span>
               </label>
-              {selectedTemplate.variables.map(varName => (
-                <div key={varName} className="form-control">
+              {selectedTemplate.variables.map((varName, index) => (
+                <motion.div 
+                  key={varName} 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.05 * index }}
+                  className="form-control"
+                >
                   <div className="input-group">
-                    <span className="bg-base-300 px-4 flex items-center min-w-[120px]">
+                    <span className="bg-base-300 px-4 flex items-center min-w-[120px] font-medium">
                       {varName}
                     </span>
                     <input
                       type="text"
-                      className="input input-bordered flex-1"
+                      className="input input-bordered flex-1 focus:outline-offset-0"
                       placeholder={`Enter ${varName}...`}
                       value={templateVars[varName] || ''}
                       onChange={(e) => setTemplateVars({ ...templateVars, [varName]: e.target.value })}
                       required
+                      aria-label={`Template variable ${varName}`}
                     />
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
 
           {!selectedTemplate && (
             <>
-              <div className="form-control">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.25 }}
+                className="form-control"
+              >
                 <label className="label">
                   <span className="label-text">Subject</span>
                 </label>
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input input-bordered w-full focus:outline-offset-0 transition-all"
                   placeholder="Email subject"
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   required
+                  aria-label="Email subject"
                 />
-              </div>
+              </motion.div>
 
-              <div className="form-control">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+                className="form-control"
+              >
                 <label className="label">
                   <span className="label-text">Message</span>
                   <div className="form-control">
-                    <label className="label cursor-pointer">
-                      <span className="label-text mr-2">HTML Mode</span>
+                    <label className="label cursor-pointer gap-2">
+                      <span className="label-text text-sm">HTML Mode</span>
                       <input
                         type="checkbox"
-                        className="toggle toggle-primary"
+                        className="toggle toggle-primary toggle-sm"
                         checked={isHtmlMode}
                         onChange={(e) => setIsHtmlMode(e.target.checked)}
+                        aria-label="Toggle HTML mode"
                       />
                     </label>
                   </div>
                 </label>
                 <textarea
-                  className="textarea textarea-bordered h-40"
+                  className="textarea textarea-bordered h-40 focus:outline-offset-0 transition-all font-mono text-sm"
                   placeholder={isHtmlMode ? '<p>HTML content</p>' : 'Plain text message'}
                   value={isHtmlMode ? formData.html : formData.text}
                   onChange={(e) => setFormData({
@@ -234,29 +294,41 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
                     [isHtmlMode ? 'html' : 'text']: e.target.value
                   })}
                   required
+                  aria-label="Email message content"
                 />
-              </div>
+              </motion.div>
             </>
           )}
 
-          <div className="card-actions justify-end">
-            <button 
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35 }}
+            className="card-actions justify-end pt-4"
+          >
+            <motion.button 
               type="submit" 
-              className="btn btn-primary"
+              className="btn btn-primary gap-2"
               disabled={isSending}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               {isSending ? (
                 <>
-                  <span className="loading loading-spinner"></span>
+                  <span className="loading loading-spinner loading-sm"></span>
                   Sending...
                 </>
               ) : (
-                '📤 Send Email'
+                <>
+                  <Send className="w-4 h-4" />
+                  Send Email
+                  <kbd className="kbd kbd-sm ml-2 hidden md:inline-flex">Ctrl+↵</kbd>
+                </>
               )}
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         </form>
       </div>
-    </div>
+    </motion.div>
   );
 }
