@@ -2,6 +2,8 @@ import { useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, FileText, History, Sun, Moon, Keyboard } from 'lucide-react';
 import { Toaster } from './components/ui/Toast';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 // Lazy load components for code splitting
@@ -47,8 +49,10 @@ function App() {
   ]);
 
   return (
-    <div className="min-h-screen bg-base-200">
-      <Toaster position="top-right" />
+    <ErrorBoundary>
+      <div className="min-h-screen bg-base-200">
+        <Toaster position="top-right" />
+        <OfflineIndicator />
       
       <motion.div 
         initial={{ y: -100 }}
@@ -178,6 +182,7 @@ function App() {
         </dialog>
       )}
     </div>
+    </ErrorBoundary>
   );
 }
 
