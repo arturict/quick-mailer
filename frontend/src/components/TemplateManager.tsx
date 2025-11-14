@@ -105,9 +105,9 @@ export function TemplateManager() {
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Subject</th>
-                  <th>Variables</th>
-                  <th>Created</th>
+                  <th className="hidden md:table-cell">Subject</th>
+                  <th className="hidden lg:table-cell">Variables</th>
+                  <th className="hidden sm:table-cell">Created</th>
                   <th className="text-right">Actions</th>
                 </tr>
               </thead>
@@ -123,10 +123,10 @@ export function TemplateManager() {
                       className="hover:bg-base-200 transition-colors"
                     >
                       <td className="font-medium">{template.name}</td>
-                      <td className="text-sm opacity-70 max-w-xs truncate" title={template.subject}>
+                      <td className="hidden md:table-cell text-sm opacity-70 max-w-xs truncate" title={template.subject}>
                         {template.subject}
                       </td>
-                      <td>
+                      <td className="hidden lg:table-cell">
                         <div className="flex gap-1 flex-wrap">
                           {template.variables && template.variables.length > 0 ? (
                             template.variables.map((v) => (
@@ -139,7 +139,7 @@ export function TemplateManager() {
                           )}
                         </div>
                       </td>
-                      <td className="text-sm opacity-70">
+                      <td className="hidden sm:table-cell text-sm opacity-70">
                         {template.created_at && new Intl.DateTimeFormat('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -147,7 +147,7 @@ export function TemplateManager() {
                         }).format(new Date(template.created_at))}
                       </td>
                       <td>
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex gap-1 sm:gap-2 justify-end">
                           <motion.button
                             onClick={() => handleEdit(template)}
                             className="btn btn-ghost btn-xs gap-1"
@@ -156,7 +156,7 @@ export function TemplateManager() {
                             aria-label={`Edit template ${template.name}`}
                           >
                             <Edit2 className="w-3 h-3" />
-                            Edit
+                            <span className="hidden sm:inline">Edit</span>
                           </motion.button>
                           <motion.button
                             onClick={() => handleDelete(template.id!, template.name)}
@@ -166,7 +166,7 @@ export function TemplateManager() {
                             aria-label={`Delete template ${template.name}`}
                           >
                             <Trash2 className="w-3 h-3" />
-                            Delete
+                            <span className="hidden sm:inline">Delete</span>
                           </motion.button>
                         </div>
                       </td>

@@ -95,13 +95,13 @@ export function EmailHistory() {
                 <table className="table table-zebra">
                   <thead>
                     <tr>
-                      <th className="w-16">ID</th>
-                      <th>From</th>
+                      <th className="hidden sm:table-cell w-16">ID</th>
+                      <th className="hidden md:table-cell">From</th>
                       <th>To</th>
-                      <th>Subject</th>
-                      <th className="w-24">Status</th>
-                      <th>Date</th>
-                      <th className="w-24">Actions</th>
+                      <th className="hidden lg:table-cell">Subject</th>
+                      <th className="w-20 sm:w-24">Status</th>
+                      <th className="hidden md:table-cell">Date</th>
+                      <th className="w-16 sm:w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -115,14 +115,14 @@ export function EmailHistory() {
                           transition={{ delay: index * 0.05 }}
                           className="hover:bg-base-200 transition-colors"
                         >
-                          <td className="font-mono text-sm">{email.id}</td>
-                          <td className="truncate max-w-xs" title={email.from_address}>
+                          <td className="hidden sm:table-cell font-mono text-sm">{email.id}</td>
+                          <td className="hidden md:table-cell truncate max-w-[150px] lg:max-w-xs" title={email.from_address}>
                             {email.from_address}
                           </td>
-                          <td className="truncate max-w-xs" title={email.to_address}>
+                          <td className="truncate max-w-[120px] sm:max-w-[200px] lg:max-w-xs" title={email.to_address}>
                             {email.to_address}
                           </td>
-                          <td className="truncate max-w-xs font-medium" title={email.subject}>
+                          <td className="hidden lg:table-cell truncate max-w-xs font-medium" title={email.subject}>
                             {email.subject}
                           </td>
                           <td>
@@ -130,7 +130,7 @@ export function EmailHistory() {
                               {email.status}
                             </span>
                           </td>
-                          <td className="text-sm opacity-70">{formatDate(email.created_at)}</td>
+                          <td className="hidden md:table-cell text-sm opacity-70">{formatDate(email.created_at)}</td>
                           <td>
                             <motion.button
                               className="btn btn-xs btn-ghost gap-1"
@@ -140,7 +140,7 @@ export function EmailHistory() {
                               aria-label={`View email ${email.id}`}
                             >
                               <Eye className="w-3 h-3" />
-                              View
+                              <span className="hidden sm:inline">View</span>
                             </motion.button>
                           </td>
                         </motion.tr>
@@ -157,7 +157,7 @@ export function EmailHistory() {
                   className="flex justify-center items-center gap-2 mt-4"
                 >
                   <motion.button
-                    className="btn btn-sm gap-2"
+                    className="btn btn-sm gap-1 sm:gap-2"
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
                     whileHover={{ scale: 1.05 }}
@@ -165,20 +165,20 @@ export function EmailHistory() {
                     aria-label="Previous page"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    Previous
+                    <span className="hidden sm:inline">Previous</span>
                   </motion.button>
-                  <span className="btn btn-sm btn-ghost pointer-events-none">
-                    Page {page} of {totalPages}
+                  <span className="btn btn-sm btn-ghost pointer-events-none text-xs sm:text-sm">
+                    <span className="hidden sm:inline">Page </span>{page}<span className="hidden sm:inline"> of {totalPages}</span><span className="sm:hidden">/{totalPages}</span>
                   </span>
                   <motion.button
-                    className="btn btn-sm gap-2"
+                    className="btn btn-sm gap-1 sm:gap-2"
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     aria-label="Next page"
                   >
-                    Next
+                    <span className="hidden sm:inline">Next</span>
                     <ChevronRight className="w-4 h-4" />
                   </motion.button>
                 </motion.div>

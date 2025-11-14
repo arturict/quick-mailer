@@ -54,57 +54,58 @@ function App() {
         className="navbar bg-base-100 shadow-lg sticky top-0 z-50"
       >
         <div className="flex-1">
-          <a className="btn btn-ghost text-xl">
-            <Mail className="w-6 h-6 mr-2" />
-            Quick Mailer
+          <a className="btn btn-ghost text-lg md:text-xl">
+            <Mail className="w-5 h-5 md:w-6 md:h-6 mr-2" />
+            <span className="hidden sm:inline">Quick Mailer</span>
+            <span className="sm:hidden">QM</span>
           </a>
         </div>
         <div className="flex-none gap-2">
           <button
-            className="btn btn-ghost btn-circle"
+            className="btn btn-ghost btn-circle btn-sm md:btn-md"
             onClick={() => setShowShortcuts(!showShortcuts)}
             aria-label="Show keyboard shortcuts"
             title="Keyboard shortcuts (Shift + ?)"
           >
-            <Keyboard className="w-5 h-5" />
+            <Keyboard className="w-4 h-4 md:w-5 md:h-5" />
           </button>
-          <label className="swap swap-rotate btn btn-ghost btn-circle" aria-label="Toggle theme">
+          <label className="swap swap-rotate btn btn-ghost btn-circle btn-sm md:btn-md" aria-label="Toggle theme">
             <input type="checkbox" className="theme-controller" value="dark" />
-            <Sun className="swap-off w-5 h-5" />
-            <Moon className="swap-on w-5 h-5" />
+            <Sun className="swap-off w-4 h-4 md:w-5 md:h-5" />
+            <Moon className="swap-on w-4 h-4 md:w-5 md:h-5" />
           </label>
         </div>
       </motion.div>
 
-      <div className="container mx-auto p-4 space-y-6 max-w-7xl">
+      <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6 max-w-7xl">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="tabs tabs-boxed bg-base-100 shadow-lg"
         >
           <a 
-            className={`tab gap-2 ${activeTab === 'compose' ? 'tab-active' : ''}`}
+            className={`tab gap-1 sm:gap-2 text-xs sm:text-sm ${activeTab === 'compose' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('compose')}
             aria-label="Compose email (Ctrl+C)"
           >
-            <Mail className="w-4 h-4" />
-            Compose
+            <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Compose</span>
           </a>
           <a 
-            className={`tab gap-2 ${activeTab === 'templates' ? 'tab-active' : ''}`}
+            className={`tab gap-1 sm:gap-2 text-xs sm:text-sm ${activeTab === 'templates' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('templates')}
             aria-label="View templates (Ctrl+T)"
           >
-            <FileText className="w-4 h-4" />
-            Templates
+            <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Templates</span>
           </a>
           <a 
-            className={`tab gap-2 ${activeTab === 'history' ? 'tab-active' : ''}`}
+            className={`tab gap-1 sm:gap-2 text-xs sm:text-sm ${activeTab === 'history' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('history')}
             aria-label="View history (Ctrl+H)"
           >
-            <History className="w-4 h-4" />
-            History
+            <History className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">History</span>
           </a>
         </motion.div>
 
