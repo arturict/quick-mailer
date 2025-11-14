@@ -11,6 +11,15 @@ export interface Email {
   created_at?: string;
 }
 
+export interface EmailSearchParams {
+  recipient?: string;
+  subject?: string;
+  status?: 'sent' | 'failed' | 'pending';
+  sender?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 export interface SendEmailRequest {
   from: string;
   to: string;
@@ -81,8 +90,20 @@ export const emailApi = {
     return response.json();
   },
 
-  async getEmails(page: number = 1, perPage: number = 50): Promise<EmailListResponse> {
-    const response = await fetch(`${API_BASE_URL}/emails?page=${page}&perPage=${perPage}`);
+  async getEmails(page: number = 1, perPage: number = 50, searchParams?: EmailSearchParams): Promise<EmailListResponse> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      perPage: perPage.toString(),
+    });
+
+    if (searchParams?.recipient) params.append('recipient', searchParams.recipient);
+    if (searchParams?.subject) params.append('subject', searchParams.subject);
+    if (searchParams?.status) params.append('status', searchParams.status);
+    if (searchParams?.sender) params.append('sender', searchParams.sender);
+    if (searchParams?.dateFrom) params.append('dateFrom', searchParams.dateFrom);
+    if (searchParams?.dateTo) params.append('dateTo', searchParams.dateTo);
+
+    const response = await fetch(`${API_BASE_URL}/emails?${params}`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch emails');

@@ -1,6 +1,6 @@
 import { ResendService } from './resend.service';
 import { SMTPService } from './smtp.service';
-import { IEmailService, EmailProvider } from './types';
+import type { IEmailService, EmailProvider } from './types';
 
 export class EmailServiceFactory {
   static create(): IEmailService {

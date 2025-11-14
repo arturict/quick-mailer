@@ -1,5 +1,9 @@
 import { Database } from 'bun:sqlite';
+<<<<<<< HEAD
+import type { Email, EmailSearchParams, Template } from './types';
+=======
 import { Email, Template } from './types';
+>>>>>>> origin/master
 
 const dbPath = process.env.DATABASE_PATH || './data/emails.db';
 export const db = new Database(dbPath);
@@ -23,6 +27,41 @@ db.run(`
 
 db.run(`CREATE INDEX IF NOT EXISTS idx_created_at ON emails(created_at DESC)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_status ON emails(status)`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_to_address ON emails(to_address)`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_from_address ON emails(from_address)`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_subject ON emails(subject)`);
+
+// Templates table
+db.run(`
+  CREATE TABLE IF NOT EXISTS templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    subject TEXT NOT NULL,
+    body_text TEXT,
+    body_html TEXT,
+    variables TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
+
+// Templates table
+db.run(`
+  CREATE TABLE IF NOT EXISTS templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    subject TEXT NOT NULL,
+    body_text TEXT,
+    body_html TEXT,
+    variables TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
 
 // Templates table
 db.run(`
@@ -45,16 +84,6 @@ export const insertEmail = db.prepare(`
   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
-export const selectEmails = db.prepare(`
-  SELECT * FROM emails
-  ORDER BY created_at DESC
-  LIMIT ? OFFSET ?
-`);
-
-export const countEmails = db.prepare(`
-  SELECT COUNT(*) as count FROM emails
-`);
-
 export const selectEmailById = db.prepare(`
   SELECT * FROM emails WHERE id = ?
 `);
@@ -73,12 +102,61 @@ export function saveEmail(email: Omit<Email, 'id' | 'created_at'>) {
   return result.lastInsertRowid;
 }
 
-export function getEmails(limit: number, offset: number): Email[] {
-  return selectEmails.all(limit, offset) as Email[];
+function buildWhereClause(searchParams: EmailSearchParams): { clause: string; params: any[] } {
+  const conditions: string[] = [];
+  const params: any[] = [];
+
+  if (searchParams.recipient) {
+    conditions.push('to_address LIKE ?');
+    params.push(`%${searchParams.recipient}%`);
+  }
+
+  if (searchParams.subject) {
+    conditions.push('subject LIKE ?');
+    params.push(`%${searchParams.subject}%`);
+  }
+
+  if (searchParams.status) {
+    conditions.push('status = ?');
+    params.push(searchParams.status);
+  }
+
+  if (searchParams.sender) {
+    conditions.push('from_address LIKE ?');
+    params.push(`%${searchParams.sender}%`);
+  }
+
+  if (searchParams.dateFrom) {
+    conditions.push('created_at >= ?');
+    params.push(searchParams.dateFrom);
+  }
+
+  if (searchParams.dateTo) {
+    conditions.push('created_at <= ?');
+    params.push(searchParams.dateTo);
+  }
+
+  const clause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  return { clause, params };
 }
 
-export function getTotalEmailsCount(): number {
-  const result = countEmails.get() as { count: number };
+export function getEmails(limit: number, offset: number, searchParams: EmailSearchParams = {}): Email[] {
+  const { clause, params } = buildWhereClause(searchParams);
+  const query = `
+    SELECT * FROM emails
+    ${clause}
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `;
+  const stmt = db.prepare(query);
+  return stmt.all(...params, limit, offset) as Email[];
+}
+
+export function getTotalEmailsCount(searchParams: EmailSearchParams = {}): number {
+  const { clause, params } = buildWhereClause(searchParams);
+  const query = `SELECT COUNT(*) as count FROM emails ${clause}`;
+  const stmt = db.prepare(query);
+  const result = stmt.get(...params) as { count: number };
   return result.count;
 }
 

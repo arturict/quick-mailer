@@ -19,6 +19,18 @@ export interface SendEmailRequest {
   html?: string;
   templateId?: number;
   variables?: Record<string, string>;
+<<<<<<< HEAD
+}
+
+export interface EmailSearchParams {
+  recipient?: string;
+  subject?: string;
+  status?: 'sent' | 'failed' | 'pending';
+  sender?: string;
+  dateFrom?: string;
+  dateTo?: string;
+=======
+>>>>>>> origin/master
 }
 
 export interface EmailListResponse {
