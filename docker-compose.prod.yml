@@ -1,0 +1,103 @@
+services:
+  quick-mailer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
+    container_name: quick-mailer-app
+    ports:
+      - "${EXTERNAL_PORT:-3000}:3000"
+    environment:
+      # Email Provider Configuration
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-resend}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      
+      # SMTP Configuration (if EMAIL_PROVIDER=smtp)
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      
+      # Application Configuration
+      - FROM_ADDRESSES=${FROM_ADDRESSES}
+      - DEFAULT_SENDER_NAME=${DEFAULT_SENDER_NAME:-Quick Mailer}
+      - PORT=3000
+      - HOST=0.0.0.0
+      - DATABASE_PATH=/app/backend/data/emails.db
+      
+      # Node Environment
+      - NODE_ENV=production
+    volumes:
+      # Persistent database storage
+      - email-data:/app/backend/data
+      
+      # Optional: Custom configuration
+      # - ./config:/app/config:ro
+    restart: unless-stopped
+    
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Health check (Docker will use the HEALTHCHECK from Dockerfile)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    
+    # Network configuration
+    networks:
+      - quick-mailer-network
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: quick-mailer-nginx
+    ports:
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx-cache:/var/cache/nginx
+    depends_on:
+      quick-mailer:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - quick-mailer-network
+    profiles:
+      # Only start nginx when explicitly requested
+      - with-nginx
+
+networks:
+  quick-mailer-network:
+    driver: bridge
+
+volumes:
+  email-data:
+    driver: local
+  nginx-cache:
+    driver: local

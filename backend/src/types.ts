@@ -19,7 +19,6 @@ export interface SendEmailRequest {
   html?: string;
   templateId?: number;
   variables?: Record<string, string>;
-<<<<<<< HEAD
 }
 
 export interface EmailSearchParams {
@@ -29,8 +28,6 @@ export interface EmailSearchParams {
   sender?: string;
   dateFrom?: string;
   dateTo?: string;
-=======
->>>>>>> origin/master
 }
 
 export interface EmailListResponse {
