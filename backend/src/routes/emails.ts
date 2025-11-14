@@ -1,6 +1,11 @@
 import { Hono } from 'hono';
+<<<<<<< HEAD
 import { saveEmail, getEmails, getTotalEmailsCount, getEmailById, saveAttachment, getAttachmentsByEmailId, getTemplateById } from '../db';
 import type { SendEmailRequest, EmailListResponse } from '../types';
+=======
+import { saveEmail, getEmails, getTotalEmailsCount, getEmailById, getTemplateById } from '../db';
+import { SendEmailRequest, EmailListResponse } from '../types';
+>>>>>>> origin/master
 import { EmailServiceFactory } from '../services/email';
 import { substituteVariables } from '../utils/template';
 
@@ -95,7 +100,10 @@ emails.post('/', async (c) => {
       subject,
       text,
       html,
+<<<<<<< HEAD
       attachments: attachmentsForService,
+=======
+>>>>>>> origin/master
     });
 
     const emailId = saveEmail({

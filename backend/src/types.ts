@@ -34,7 +34,10 @@ export interface SendEmailRequest {
   subject: string;
   text?: string;
   html?: string;
+<<<<<<< HEAD
   attachments?: AttachmentData[];
+=======
+>>>>>>> origin/master
   templateId?: number;
   variables?: Record<string, string>;
 }

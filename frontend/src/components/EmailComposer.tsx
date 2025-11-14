@@ -1,10 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+<<<<<<< HEAD
 import { Send, FileText, Mail, User, Paperclip } from 'lucide-react';
 import { emailApi, templateApi, SendEmailRequest, AttachmentData, Template } from '../api';
 import { showToast } from './ui/Toast';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { FileUpload } from './FileUpload';
+=======
+import { Send, FileText, Mail, User } from 'lucide-react';
+import { emailApi, templateApi, SendEmailRequest, Template } from '../api';
+import { showToast } from './ui/Toast';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+>>>>>>> origin/master
 
 interface EmailComposerProps {
   onEmailSent?: () => void;
@@ -118,10 +125,13 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
     }
   };
 
+<<<<<<< HEAD
   const handleFilesChange = (files: AttachmentData[]) => {
     setFormData({ ...formData, attachments: files });
   };
 
+=======
+>>>>>>> origin/master
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -310,6 +320,7 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+<<<<<<< HEAD
             transition={{ delay: 0.3 }}
           >
             <FileUpload onFilesChange={handleFilesChange} />
@@ -318,6 +329,8 @@ export function EmailComposer({ onEmailSent }: EmailComposerProps) {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+=======
+>>>>>>> origin/master
             transition={{ delay: 0.35 }}
             className="card-actions justify-end pt-4"
           >

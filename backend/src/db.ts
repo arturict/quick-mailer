@@ -1,5 +1,9 @@
 import { Database } from 'bun:sqlite';
+<<<<<<< HEAD
 import type { Email, Attachment, Template } from './types';
+=======
+import { Email, Template } from './types';
+>>>>>>> origin/master
 
 const dbPath = process.env.DATABASE_PATH || './data/emails.db';
 export const db = new Database(dbPath);
@@ -37,6 +41,22 @@ db.run(`
 db.run(`CREATE INDEX IF NOT EXISTS idx_created_at ON emails(created_at DESC)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_status ON emails(status)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_attachments_email_id ON attachments(email_id)`);
+
+// Templates table
+db.run(`
+  CREATE TABLE IF NOT EXISTS templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    subject TEXT NOT NULL,
+    body_text TEXT,
+    body_html TEXT,
+    variables TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`CREATE INDEX IF NOT EXISTS idx_template_name ON templates(name)`);
 
 // Templates table
 db.run(`
@@ -125,6 +145,7 @@ export function getEmailById(id: number): Email | undefined {
   return selectEmailById.get(id) as Email | undefined;
 }
 
+<<<<<<< HEAD
 export function saveAttachment(attachment: Omit<Attachment, 'id' | 'created_at'>) {
   const result = insertAttachment.run(
     attachment.email_id,
@@ -141,6 +162,8 @@ export function getAttachmentsByEmailId(emailId: number): Attachment[] {
 }
 
 
+=======
+>>>>>>> origin/master
 // Template operations
 export const insertTemplate = db.prepare(`
   INSERT INTO templates (name, subject, body_text, body_html, variables)
