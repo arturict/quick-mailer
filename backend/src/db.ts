@@ -4,7 +4,11 @@ import type { Email, EmailSearchParams, Template } from './types';
 const dbPath = process.env.DATABASE_PATH || './data/emails.db';
 export const db = new Database(dbPath);
 
-db.run('PRAGMA journal_mode = WAL');
+// Performance optimizations for SQLite
+db.run('PRAGMA journal_mode = WAL'); // Write-Ahead Logging for better concurrency
+db.run('PRAGMA synchronous = NORMAL'); // Balance between safety and performance
+db.run('PRAGMA cache_size = -64000'); // 64MB cache size for better query performance
+db.run('PRAGMA temp_store = MEMORY'); // Use memory for temporary tables
 
 db.run(`
   CREATE TABLE IF NOT EXISTS emails (
@@ -26,6 +30,8 @@ db.run(`CREATE INDEX IF NOT EXISTS idx_status ON emails(status)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_to_address ON emails(to_address)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_from_address ON emails(from_address)`);
 db.run(`CREATE INDEX IF NOT EXISTS idx_subject ON emails(subject)`);
+// Composite index for common search pattern: status + date range
+db.run(`CREATE INDEX IF NOT EXISTS idx_status_date ON emails(status, created_at DESC)`);
 
 // Templates table
 db.run(`

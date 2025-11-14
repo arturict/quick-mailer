@@ -148,8 +148,20 @@ emails.get('/', async (c) => {
     }
 
     const offset = (page - 1) * perPage;
+    
+    // Performance logging for query monitoring
+    const startTime = Date.now();
     const emailsList = getEmails(perPage, offset, searchParams);
     const total = getTotalEmailsCount(searchParams);
+    const queryTime = Date.now() - startTime;
+    
+    // Log slow queries for performance monitoring (>100ms is considered slow)
+    if (queryTime > 100) {
+      console.warn(`⚠️  Slow query detected (${queryTime}ms):`, { searchParams, page, perPage });
+    } else {
+      console.log(`📊 Query executed in ${queryTime}ms`);
+    }
+    
     const totalPages = Math.ceil(total / perPage);
 
     const response: EmailListResponse = {
