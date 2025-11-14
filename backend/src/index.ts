@@ -3,19 +3,57 @@ import { serveStatic } from 'hono/bun';
 import { corsMiddleware } from './middleware/cors';
 import emailRoutes from './routes/emails';
 import templateRoutes from './routes/templates';
+import { checkDatabaseHealth } from './db';
 import './db';
 
 const app = new Hono();
 
 app.use('*', corsMiddleware);
 
+// Enhanced health check with detailed status
 app.get('/health', (c) => {
-  return c.json({ 
-    status: 'ok', 
+  const dbHealth = checkDatabaseHealth();
+  
+  // Check if email provider is configured
+  const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
+  let emailProviderStatus = 'not_configured';
+  
+  if (emailProvider === 'resend' && process.env.RESEND_API_KEY) {
+    emailProviderStatus = 'configured';
+  } else if (emailProvider === 'smtp' && process.env.SMTP_HOST && process.env.SMTP_USER) {
+    emailProviderStatus = 'configured';
+  }
+  
+  const fromAddresses = process.env.FROM_ADDRESSES?.split(',').filter(a => a.trim()) || [];
+  
+  const overallHealth = dbHealth.status === 'healthy' && 
+                        emailProviderStatus === 'configured' &&
+                        fromAddresses.length > 0;
+  
+  const response = {
+    status: overallHealth ? 'healthy' : 'degraded',
     service: 'quick-mailer-api',
     version: '1.0.0',
-    timestamp: new Date().toISOString()
-  });
+    timestamp: new Date().toISOString(),
+    checks: {
+      database: {
+        status: dbHealth.status,
+        error: dbHealth.error
+      },
+      emailProvider: {
+        status: emailProviderStatus,
+        provider: emailProvider,
+        configured: emailProviderStatus === 'configured'
+      },
+      fromAddresses: {
+        status: fromAddresses.length > 0 ? 'configured' : 'not_configured',
+        count: fromAddresses.length
+      }
+    }
+  };
+  
+  // Return 503 if not healthy, 200 otherwise
+  return c.json(response, overallHealth ? 200 : 503);
 });
 
 app.route('/api/emails', emailRoutes);
