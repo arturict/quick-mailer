@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
-import { IEmailService, SendEmailParams, SendEmailResult } from './types';
+import type { IEmailService, SendEmailParams, SendEmailResult } from './types';
 
 export class SMTPService implements IEmailService {
   private transporter: Transporter;
