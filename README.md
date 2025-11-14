@@ -14,8 +14,22 @@ Local-only web app for sending emails via Resend with full history tracking. Per
 - 📜 **Email History** - Track all sent emails with full details and pagination
 - 🎨 **HTML & Plain Text** - Support for both HTML and plain text emails
 - 💾 **SQLite Database** - Lightweight local storage with WAL mode
+- 📧 **Multiple Email Providers** - Support for Resend API and any SMTP server
 - 🐳 **Docker Deployment** - Production-ready containerization
 - ⚡ **Fast & Modern** - Built with Bun, Hono, React 19, Vite, and Tailwind CSS
+
+### Supported Email Providers
+
+- ✅ **Resend API** (default) - Modern email API
+- ✅ **SMTP Servers** - Any generic SMTP server
+  - Gmail
+  - Outlook/Office365
+  - Yahoo Mail
+  - SendGrid
+  - Mailgun
+  - Amazon SES
+  - Postal (self-hosted)
+  - Custom SMTP servers
 
 ## 🚀 Quick Start
 
@@ -75,8 +89,13 @@ npm run dev  # Runs on http://localhost:5173
 
 Create a `.env` file in the root directory:
 
+### Option 1: Using Resend API (Default)
+
 ```env
-# Resend API Configuration (Required)
+# Email Provider
+EMAIL_PROVIDER=resend
+
+# Resend API Configuration
 RESEND_API_KEY=re_your_api_key_here
 
 # From Addresses - comma-separated list (Required)
@@ -88,12 +107,41 @@ PORT=3000
 DATABASE_PATH=./data/emails.db
 ```
 
-### Getting a Resend API Key
+### Option 2: Using SMTP Server
 
+```env
+# Email Provider
+EMAIL_PROVIDER=smtp
+
+# SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=true
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+
+# From Addresses
+FROM_ADDRESSES=your-email@gmail.com
+
+# Optional Configuration
+DEFAULT_SENDER_NAME=Quick Mailer
+PORT=3000
+DATABASE_PATH=./data/emails.db
+```
+
+### Getting Started
+
+**Resend API:**
 1. Sign up at [resend.com](https://resend.com)
 2. Verify your domain
 3. Create an API key
 4. Add it to your `.env` file
+
+**SMTP Server:**
+1. Get SMTP credentials from your email provider
+2. For Gmail: Use [App Password](https://support.google.com/accounts/answer/185833)
+3. Configure SMTP settings in `.env`
+4. See [SMTP Guide](docs/SMTP.md) for provider-specific configs
 
 ## 📋 API Endpoints
 
@@ -187,6 +235,7 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## 🎯 Roadmap
 
+- [x] **SMTP Support** - Generic SMTP server support
 - [ ] Email templates with variables
 - [ ] Bulk email sending
 - [ ] Email scheduling
