@@ -17,6 +17,8 @@ export interface SendEmailRequest {
   subject: string;
   text?: string;
   html?: string;
+  templateId?: number;
+  variables?: Record<string, string>;
 }
 
 export interface EmailListResponse {
@@ -25,6 +27,38 @@ export interface EmailListResponse {
   page: number;
   perPage: number;
   totalPages: number;
+}
+
+export interface Template {
+  id?: number;
+  name: string;
+  subject: string;
+  body_text?: string;
+  body_html?: string;
+  variables?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateTemplateRequest {
+  name: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  variables?: string[];
+}
+
+export interface UpdateTemplateRequest {
+  name?: string;
+  subject?: string;
+  text?: string;
+  html?: string;
+  variables?: string[];
+}
+
+export interface TemplateListResponse {
+  templates: Template[];
+  total: number;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -62,6 +96,74 @@ export const emailApi = {
     
     if (!response.ok) {
       throw new Error('Failed to fetch email');
+    }
+
+    return response.json();
+  },
+};
+
+export const templateApi = {
+  async createTemplate(request: CreateTemplateRequest): Promise<{ success: boolean; id: number }> {
+    const response = await fetch(`${API_BASE_URL}/templates`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create template');
+    }
+
+    return response.json();
+  },
+
+  async getTemplates(): Promise<TemplateListResponse> {
+    const response = await fetch(`${API_BASE_URL}/templates`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch templates');
+    }
+
+    return response.json();
+  },
+
+  async getTemplate(id: number): Promise<Template> {
+    const response = await fetch(`${API_BASE_URL}/templates/${id}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch template');
+    }
+
+    return response.json();
+  },
+
+  async updateTemplate(id: number, request: UpdateTemplateRequest): Promise<{ success: boolean }> {
+    const response = await fetch(`${API_BASE_URL}/templates/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update template');
+    }
+
+    return response.json();
+  },
+
+  async deleteTemplate(id: number): Promise<{ success: boolean }> {
+    const response = await fetch(`${API_BASE_URL}/templates/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete template');
     }
 
     return response.json();
