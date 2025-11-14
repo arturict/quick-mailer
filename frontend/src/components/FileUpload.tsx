@@ -11,6 +11,13 @@ export function FileUpload({ onFilesChange, maxFileSize = 10 * 1024 * 1024 }: Fi
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Dangerous file extensions that should be blocked
+  const BLOCKED_EXTENSIONS = [
+    '.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js', '.jar',
+    '.app', '.deb', '.rpm', '.dmg', '.pkg', '.sh', '.bash', '.csh', '.ksh',
+    '.run', '.bin', '.msi', '.apk', '.ipa'
+  ];
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -19,11 +26,22 @@ export function FileUpload({ onFilesChange, maxFileSize = 10 * 1024 * 1024 }: Fi
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const isFileTypeAllowed = (filename: string): boolean => {
+    const lowerFilename = filename.toLowerCase();
+    return !BLOCKED_EXTENSIONS.some(ext => lowerFilename.endsWith(ext));
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     const selectedFiles = Array.from(e.target.files || []);
 
     for (const file of selectedFiles) {
+      // Validate file type
+      if (!isFileTypeAllowed(file.name)) {
+        setError(`File type not allowed: "${file.name}". Executable files are blocked for security.`);
+        return;
+      }
+
       // Validate file size
       if (file.size > maxFileSize) {
         setError(`File "${file.name}" exceeds the maximum size of ${formatFileSize(maxFileSize)}`);

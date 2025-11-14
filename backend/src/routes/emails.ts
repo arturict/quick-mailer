@@ -23,10 +23,25 @@ emails.post('/', async (c) => {
       return c.json({ error: 'Missing required fields: from, to, subject' }, 400);
     }
 
-    // Validate attachments size (max 10MB per file)
+    // Validate attachments
     if (body.attachments && body.attachments.length > 0) {
       const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+      const BLOCKED_EXTENSIONS = [
+        '.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js', '.jar',
+        '.app', '.deb', '.rpm', '.dmg', '.pkg', '.sh', '.bash', '.csh', '.ksh',
+        '.run', '.bin', '.msi', '.apk', '.ipa'
+      ];
+
       for (const attachment of body.attachments) {
+        // Validate file type
+        const lowerFilename = attachment.filename.toLowerCase();
+        const isBlocked = BLOCKED_EXTENSIONS.some(ext => lowerFilename.endsWith(ext));
+        if (isBlocked) {
+          return c.json({ 
+            error: `File type not allowed: "${attachment.filename}". Executable files are blocked for security.` 
+          }, 400);
+        }
+
         // Estimate size from base64 content
         const estimatedSize = Math.ceil((attachment.content.length * 3) / 4);
         if (estimatedSize > MAX_FILE_SIZE) {

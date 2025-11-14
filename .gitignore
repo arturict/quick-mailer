@@ -19,6 +19,7 @@ data/
 dist/
 build/
 *.log
+*.tsbuildinfo
 
 # IDE
 .vscode/
