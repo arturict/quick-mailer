@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, FileText, History, Sun, Moon, Keyboard } from 'lucide-react';
-import { EmailComposer } from './components/EmailComposer';
-import { EmailHistory } from './components/EmailHistory';
-import { TemplateManager } from './components/TemplateManager';
 import { Toaster } from './components/ui/Toast';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+
+// Lazy load components for code splitting
+const EmailComposer = lazy(() => import('./components/EmailComposer').then(module => ({ default: module.EmailComposer })));
+const EmailHistory = lazy(() => import('./components/EmailHistory').then(module => ({ default: module.EmailHistory })));
+const TemplateManager = lazy(() => import('./components/TemplateManager').then(module => ({ default: module.TemplateManager })));
 
 function App() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -109,19 +111,25 @@ function App() {
           </a>
         </motion.div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'compose' && <EmailComposer onEmailSent={handleEmailSent} />}
-            {activeTab === 'templates' && <TemplateManager />}
-            {activeTab === 'history' && <EmailHistory key={refreshKey} />}
-          </motion.div>
-        </AnimatePresence>
+        <Suspense fallback={
+          <div className="flex justify-center items-center p-12">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        }>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'compose' && <EmailComposer onEmailSent={handleEmailSent} />}
+              {activeTab === 'templates' && <TemplateManager />}
+              {activeTab === 'history' && <EmailHistory key={refreshKey} />}
+            </motion.div>
+          </AnimatePresence>
+        </Suspense>
       </div>
 
       <footer className="footer footer-center p-4 bg-base-300 text-base-content mt-8">

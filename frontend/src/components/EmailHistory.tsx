@@ -1,17 +1,65 @@
-<<<<<<< HEAD
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Eye, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { emailApi, Email, EmailSearchParams } from '../api';
-=======
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Eye, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { emailApi, Email } from '../api';
->>>>>>> origin/master
 import { TableSkeleton } from './ui/LoadingSkeleton';
 import { EmptyState } from './ui/EmptyState';
 import { showToast } from './ui/Toast';
+
+// Memoized email row component to prevent unnecessary re-renders
+const EmailRow = memo(function EmailRow({ 
+  email, 
+  onView,
+  formatDate,
+  getStatusBadge,
+  index
+}: { 
+  email: Email;
+  onView: (email: Email) => void;
+  formatDate: (dateString?: string) => string;
+  getStatusBadge: (status: string) => string;
+  index: number;
+}) {
+  return (
+    <motion.tr 
+      key={email.id}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ delay: index * 0.05 }}
+      className="hover:bg-base-200 transition-colors"
+    >
+      <td className="hidden sm:table-cell font-mono text-sm">{email.id}</td>
+      <td className="hidden md:table-cell truncate max-w-[150px] lg:max-w-xs" title={email.from_address}>
+        {email.from_address}
+      </td>
+      <td className="truncate max-w-[120px] sm:max-w-[200px] lg:max-w-xs" title={email.to_address}>
+        {email.to_address}
+      </td>
+      <td className="hidden lg:table-cell truncate max-w-xs font-medium" title={email.subject}>
+        {email.subject}
+      </td>
+      <td>
+        <span className={`badge badge-sm ${getStatusBadge(email.status)}`}>
+          {email.status}
+        </span>
+      </td>
+      <td className="hidden md:table-cell text-sm opacity-70">{formatDate(email.created_at)}</td>
+      <td>
+        <motion.button
+          className="btn btn-xs btn-ghost gap-1"
+          onClick={() => onView(email)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          aria-label={`View email ${email.id}`}
+        >
+          <Eye className="w-3 h-3" />
+          <span className="hidden sm:inline">View</span>
+        </motion.button>
+      </td>
+    </motion.tr>
+  );
+});
 
 export function EmailHistory() {
   const [emails, setEmails] = useState<Email[]>([]);
@@ -29,7 +77,7 @@ export function EmailHistory() {
   const [dateFromInput, setDateFromInput] = useState('');
   const [dateToInput, setDateToInput] = useState('');
 
-  const loadEmails = async () => {
+  const loadEmails = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await emailApi.getEmails(page, 50, searchParams);
@@ -41,7 +89,7 @@ export function EmailHistory() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page]);
 
   // Debounced search effect
   useEffect(() => {
@@ -64,7 +112,7 @@ export function EmailHistory() {
 
   useEffect(() => {
     loadEmails();
-  }, [page, searchParams]);
+  }, [loadEmails]);
 
   const clearFilters = useCallback(() => {
     setRecipientInput('');
@@ -77,7 +125,7 @@ export function EmailHistory() {
     setPage(1);
   }, []);
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = useCallback((dateString?: string) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -86,17 +134,25 @@ export function EmailHistory() {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(date);
-  };
+        }).format(date);
+  }, []);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     const badges = {
       sent: 'badge-success',
       failed: 'badge-error',
       pending: 'badge-warning',
     };
     return badges[status as keyof typeof badges] || 'badge-ghost';
-  };
+  }, []);
+
+  const handlePreviousPage = useCallback(() => {
+    setPage(p => Math.max(1, p - 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setPage(p => Math.min(totalPages, p + 1));
+  }, [totalPages]);
 
   return (
     <div className="space-y-4">
@@ -121,7 +177,6 @@ export function EmailHistory() {
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </motion.button>
-<<<<<<< HEAD
           </div>
 
           {/* Search and Filter Section */}
@@ -223,14 +278,11 @@ export function EmailHistory() {
                 🗑️ Clear Filters
               </button>
             </div>
-=======
->>>>>>> origin/master
           </div>
 
           {isLoading && emails.length === 0 ? (
             <TableSkeleton rows={5} />
           ) : emails.length === 0 ? (
-<<<<<<< HEAD
             Object.keys(searchParams).length > 0 ? (
               <EmptyState
                 icon="sparkles"
@@ -252,17 +304,6 @@ export function EmailHistory() {
                 }}
               />
             )
-=======
-            <EmptyState
-              icon="inbox"
-              title="No emails sent yet"
-              description="Your email history will appear here once you send your first email."
-              action={{
-                label: "Compose Email",
-                onClick: () => window.dispatchEvent(new CustomEvent('navigate', { detail: 'compose' }))
-              }}
-            />
->>>>>>> origin/master
           ) : (
             <>
               <div className="overflow-x-auto relative">
@@ -286,43 +327,14 @@ export function EmailHistory() {
                   <tbody>
                     <AnimatePresence mode="popLayout">
                       {emails.map((email, index) => (
-                        <motion.tr 
+                        <EmailRow
                           key={email.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 20 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="hover:bg-base-200 transition-colors"
-                        >
-                          <td className="hidden sm:table-cell font-mono text-sm">{email.id}</td>
-                          <td className="hidden md:table-cell truncate max-w-[150px] lg:max-w-xs" title={email.from_address}>
-                            {email.from_address}
-                          </td>
-                          <td className="truncate max-w-[120px] sm:max-w-[200px] lg:max-w-xs" title={email.to_address}>
-                            {email.to_address}
-                          </td>
-                          <td className="hidden lg:table-cell truncate max-w-xs font-medium" title={email.subject}>
-                            {email.subject}
-                          </td>
-                          <td>
-                            <span className={`badge badge-sm ${getStatusBadge(email.status)}`}>
-                              {email.status}
-                            </span>
-                          </td>
-                          <td className="hidden md:table-cell text-sm opacity-70">{formatDate(email.created_at)}</td>
-                          <td>
-                            <motion.button
-                              className="btn btn-xs btn-ghost gap-1"
-                              onClick={() => setSelectedEmail(email)}
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              aria-label={`View email ${email.id}`}
-                            >
-                              <Eye className="w-3 h-3" />
-                              <span className="hidden sm:inline">View</span>
-                            </motion.button>
-                          </td>
-                        </motion.tr>
+                          email={email}
+                          onView={setSelectedEmail}
+                          formatDate={formatDate}
+                          getStatusBadge={getStatusBadge}
+                          index={index}
+                        />
                       ))}
                     </AnimatePresence>
                   </tbody>
@@ -337,7 +349,7 @@ export function EmailHistory() {
                 >
                   <motion.button
                     className="btn btn-sm gap-1 sm:gap-2"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    onClick={handlePreviousPage}
                     disabled={page === 1}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -351,7 +363,7 @@ export function EmailHistory() {
                   </span>
                   <motion.button
                     className="btn btn-sm gap-1 sm:gap-2"
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    onClick={handleNextPage}
                     disabled={page === totalPages}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
