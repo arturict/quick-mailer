@@ -11,6 +11,7 @@ Local-only web app for sending emails via Resend with full history tracking. Per
 
 - 📤 **Email Composer** - Send emails with custom From/To/Subject/Body
 - 📋 **From Address Selector** - Choose from configured sender addresses
+- 📎 **File Attachments** - Upload multiple files with drag-and-drop support
 - 📝 **Email Templates** - Create and manage reusable templates with variable substitution
 - 📜 **Email History** - Track all sent emails with full details and pagination
 - 🎨 **HTML & Plain Text** - Support for both HTML and plain text emails
@@ -18,6 +19,15 @@ Local-only web app for sending emails via Resend with full history tracking. Per
 - 📧 **Multiple Email Providers** - Support for Resend API and any SMTP server
 - 🐳 **Docker Deployment** - Production-ready containerization
 - ⚡ **Fast & Modern** - Built with Bun, Hono, React 19, Vite, and Tailwind CSS
+
+### File Attachment Features
+
+- 📎 **Multiple Attachments** - Attach multiple files to each email
+- 🖱️ **Drag & Drop** - Easy file upload with drag-and-drop interface
+- 🔒 **Security Validation** - File type and size restrictions (max 10MB per file)
+- 📄 **Supported Types** - Images (JPEG, PNG, GIF, WebP, SVG), PDFs, Office documents (Word, Excel, PowerPoint), text files, CSV, ZIP
+- 💾 **Database Storage** - Attachments stored securely in SQLite database
+- 📥 **Download Support** - Download attachments from email history
 
 ### Supported Email Providers
 
@@ -189,10 +199,16 @@ When sending, provide values:
 
 ### Emails
 ```
-POST   /api/emails      - Send email (supports template-based sending)
+POST   /api/emails      - Send email (supports template-based sending and file attachments)
 GET    /api/emails      - Get email history (paginated)
-GET    /api/emails/:id  - Get single email details
+GET    /api/emails/:id  - Get single email details (includes attachment metadata)
 ```
+
+**Sending emails with attachments:**
+- Use `multipart/form-data` content type
+- Include files in the `attachments` field
+- Max 10MB per file
+- Supported types: images, PDFs, Office documents, text files, CSV, ZIP
 
 ### Templates
 ```
@@ -201,6 +217,11 @@ GET    /api/templates     - Get all templates
 GET    /api/templates/:id - Get single template
 PUT    /api/templates/:id - Update template
 DELETE /api/templates/:id - Delete template
+```
+
+### Attachments
+```
+GET    /api/attachments/:id - Download attachment file
 ```
 
 ### Health
@@ -237,6 +258,23 @@ CREATE TABLE templates (
   variables TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Attachments Table
+```sql
+CREATE TABLE attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email_id INTEGER NOT NULL,
+  filename TEXT NOT NULL,
+  original_filename TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  file_data BLOB NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (email_id) REFERENCES emails (id) ON DELETE CASCADE
+);
+```
 );
 ```
 
@@ -283,6 +321,14 @@ docker-compose down -v
 - Recommended to run behind a VPN or firewall
 - CORS is enabled for development (configure for production)
 
+### Attachment Security
+
+- **File Type Validation:** Only approved file types are allowed (images, PDFs, Office documents, text files, CSV, ZIP)
+- **Size Limits:** Maximum 10MB per file to prevent abuse
+- **Filename Sanitization:** Filenames are sanitized to prevent path traversal attacks
+- **MIME Type Verification:** Both file extension and MIME type are validated
+- **Database Storage:** Attachments are stored securely in the SQLite database with proper access controls
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -308,9 +354,9 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 - [x] **SMTP Support** - Generic SMTP server support
 - [x] **Email Templates** - Templates with variable substitution
+- [x] **Attachment Support** - File attachments with drag-and-drop
 - [ ] Bulk email sending
 - [ ] Email scheduling
-- [ ] Attachment support
 - [ ] Search and filtering
 - [ ] Export email history
 - [ ] API authentication
